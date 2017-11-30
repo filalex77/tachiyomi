@@ -30,12 +30,6 @@ class SettingsMainController : SettingsController() {
             onClick { navigateTo(SettingsDownloadController()) }
         }
         preference {
-            iconRes = R.drawable.ic_chrome_reader_mode_black_24dp
-            iconTint = tintColor
-            titleRes = R.string.pref_category_extensions
-            onClick { navigateTo(SettingsExtensionController()) }
-        }
-        preference {
             iconRes = R.drawable.ic_sync_black_24dp
             iconTint = tintColor
             titleRes = R.string.pref_category_tracking

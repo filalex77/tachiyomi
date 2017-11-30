@@ -204,6 +204,12 @@ class CatalogueController : NucleusController<CataloguePresenter>(),
                 router.pushController((RouterTransaction.with(SettingsSourcesController()))
                         .popChangeHandler(SettingsSourcesFadeChangeHandler())
                         .pushChangeHandler(FadeChangeHandler()))
+
+            }
+            R.id.action_add_extensions -> {
+                router.pushController((RouterTransaction.with(SettingsExtensionController()))
+                        .popChangeHandler(SettingsSourcesFadeChangeHandler())
+                        .pushChangeHandler(FadeChangeHandler()))
             }
             else -> return super.onOptionsItemSelected(item)
         }
