@@ -74,7 +74,7 @@ open class SourceManager(private val context: Context) {
                     val map = file.inputStream().use { yaml.loadAs(it, Map::class.java) }
                     sources.add(YamlHttpSource(map))
                 } catch (e: Exception) {
-                    Timber.e("Error loading source from file. Bad format?", e)
+                    Timber.e(e, "Error loading source from file. Bad format?")
                 }
             }
         }
@@ -99,7 +99,7 @@ open class SourceManager(private val context: Context) {
                     .split(";")
                     .map {
                         val sourceClass = it.trim()
-                        if(sourceClass.startsWith("."))
+                        if (sourceClass.startsWith("."))
                             pkgInfo.packageName + sourceClass
                         else
                             sourceClass
@@ -109,9 +109,9 @@ open class SourceManager(private val context: Context) {
             try {
                 sources += loadExtension(extension)
             } catch (e: Exception) {
-                Timber.e("Extension load error: $extName.", e)
+                Timber.e(e, "Extension load error: $extName.")
             } catch (e: LinkageError) {
-                Timber.e("Extension load error: $extName.", e)
+                Timber.e(e, "Extension load error: $extName.")
             }
         }
         return sources
@@ -128,7 +128,7 @@ open class SourceManager(private val context: Context) {
         val classLoader = PathClassLoader(ext.appInfo.sourceDir, null, context.classLoader)
         return ext.sourceClasses.flatMap {
             val obj = Class.forName(it, false, classLoader).newInstance()
-            when(obj) {
+            when (obj) {
                 is Source -> listOf(obj)
                 is SourceFactory -> obj.createSources()
                 else -> throw Exception("Unknown source class type!")
