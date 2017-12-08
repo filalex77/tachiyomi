@@ -1,6 +1,5 @@
 package eu.kanade.tachiyomi.ui.catalogue.extension
 
-import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v4.widget.DrawerLayout
 import android.support.v7.widget.DividerItemDecoration
@@ -16,7 +15,7 @@ import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.data.updater.UpdateDownloaderService
 import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
-import eu.kanade.tachiyomi.ui.catalogue.ProgressItem
+import eu.kanade.tachiyomi.ui.catalogue.browse.ProgressItem
 import eu.kanade.tachiyomi.util.gone
 import eu.kanade.tachiyomi.util.snack
 import eu.kanade.tachiyomi.util.visible
@@ -82,8 +81,8 @@ open class ExtensionController :
         return inflater.inflate(R.layout.extension_controller, container, false)
     }
 
-    override fun onViewCreated(view: View, savedViewState: Bundle?) {
-        super.onViewCreated(view, savedViewState)
+    override fun onViewCreated(view: View) {
+        super.onViewCreated(view)
 
         // Initialize adapter, scroll listener and recycler views
         adapter = FlexibleAdapter(null, this)
