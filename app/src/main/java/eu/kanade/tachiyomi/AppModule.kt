@@ -31,7 +31,7 @@ class AppModule(val app: Application) : InjektModule {
 
             addSingletonFactory { SourceManager(app) }
 
-            addSingletonFactory { ExtensionManager()}
+            addSingletonFactory { ExtensionManager(app)}
 
             addSingletonFactory { DownloadManager(app) }
 

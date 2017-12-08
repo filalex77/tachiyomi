@@ -145,6 +145,11 @@
     <string name="default_category">Default category</string>
     <string name="default_category_summary">Always ask</string>
 
+    <!-- Extension section -->
+    <string name="out_of_date">Newer</string>
+    <string name="up_to_date">Up to date</string>
+    <string name="not_installed">Not installed</string>
+
       <!-- Reader section -->
     <string name="pref_fullscreen">Fullscreen</string>
     <string name="pref_lock_orientation">Lock orientation</string>
@@ -189,6 +194,9 @@
     <string name="color_filter_g_value">G</string>
     <string name="color_filter_b_value">B</string>
     <string name="color_filter_a_value">A</string>
+
+    <!-- Extensions Section -->
+    <string name="error_with_repository">Error connecting to repository</string>
 
 
       <!-- Downloads section -->

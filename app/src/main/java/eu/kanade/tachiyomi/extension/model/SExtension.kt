@@ -11,6 +11,10 @@ interface SExtension {
 
     var version: String
 
+    var upToDate: Boolean
+
+    var installed: Boolean
+
 
     companion object {
         fun create(): SExtension {

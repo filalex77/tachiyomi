@@ -11,7 +11,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Response
 import org.jsoup.nodes.Element
 import rx.Observable
-import timber.log.Timber
 import uy.kohesive.injekt.injectLazy
 
 class FDroidParser {
@@ -71,12 +70,11 @@ class FDroidParser {
         var name = urlElement.text()
         name = name.removePrefix("tachiyomi-")
         extension.lang = name.substringBefore(".")
-        name = name.removePrefix(extension.lang+ ".")
+        name = name.removePrefix(extension.lang + ".")
         extension.name = name.substringBefore("-")
         name = name.removeSuffix("-debug.apk")
         extension.version = name.substringAfter("-v")
 
-        Timber.d("extension- name %s | lang %s | version %s | url %s", extension.name, extension.lang, extension.version, extension.url)
         return extension
     }
 }
