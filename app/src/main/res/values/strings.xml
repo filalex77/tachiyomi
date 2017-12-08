@@ -146,7 +146,7 @@
     <string name="default_category_summary">Always ask</string>
 
     <!-- Extension section -->
-    <string name="out_of_date">Newer</string>
+    <string name="out_of_date">New version</string>
     <string name="up_to_date">Up to date</string>
     <string name="not_installed">Not installed</string>
 
