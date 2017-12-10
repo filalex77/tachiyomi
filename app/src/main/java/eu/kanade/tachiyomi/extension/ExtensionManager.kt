@@ -3,26 +3,23 @@ package eu.kanade.tachiyomi.extension
 import android.content.Context
 import android.content.pm.PackageManager
 import eu.kanade.tachiyomi.extension.model.SExtension
+import eu.kanade.tachiyomi.extension.online.ExtensionParser
 import eu.kanade.tachiyomi.extension.online.FDroidParser
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.ui.catalogue.extension.ExtensionItem
 import rx.Observable
 
-/**
- * Created by Carlos on 11/30/2017.
+/**Manages Extensions installed as well as extensions from Repos
+ * Created on 11/30/2017.
  */
 open class ExtensionManager(
         private val context: Context,
-        private val fDroidParser: FDroidParser = FDroidParser()
+        private val fDroidParser: ExtensionParser = FDroidParser()
 ) {
     private val extensionMap = mutableMapOf<String, SExtension>()
     private val extensionsInstalled = mutableMapOf<String, SExtension>()
 
-    init {
-
-    }
-
-    fun getExtensionCache(): MutableCollection<SExtension> {
+    private fun getExtensionCache(): MutableCollection<SExtension> {
         return extensionMap.values
     }
 
@@ -40,7 +37,11 @@ open class ExtensionManager(
         if (getExtensionCache().isEmpty()) {
             extensionsInstalled.clear()
             populateInstalledExtensions()
-            return fDroidParser.findExtensions().flatMapIterable { it -> it }.filter { it -> registerExtension(it) }.toList().flatMapIterable { it -> it }.filter { it -> filterOutdated(it) }.doOnNext { it -> updateExtensionWithInstalled(it) }.map { it -> ExtensionItem(it) }.toList()
+
+            //If more sources are added combine find extensions calls.  Then go into the flatMap
+            val findExtensions = fDroidParser.findExtensions();
+
+            return findExtensions.flatMapIterable { it -> it }.filter { it -> registerExtension(it) }.toList().flatMapIterable { it -> it }.filter { it -> filterOutdated(it) }.doOnNext { it -> updateExtensionWithInstalled(it) }.map { it -> ExtensionItem(it) }.toList()
         }
         extensionsInstalled.clear()
         populateInstalledExtensions()
@@ -125,9 +126,6 @@ open class ExtensionManager(
         for (pkgInfo in extPkgs) {
             val appInfo = pkgManager.getApplicationInfo(pkgInfo.packageName,
                     PackageManager.GET_META_DATA) ?: continue
-
-            /*val extName = pkgManager.getApplicationLabel(appInfo).toString()
-                    .substringAfter("Tachiyomi: ")*/
             val version = pkgInfo.versionName
             val extName = pkgInfo.packageName.substringAfterLast(".")
 
@@ -141,7 +139,6 @@ open class ExtensionManager(
 
     private companion object {
         const val EXTENSION_FEATURE = "tachiyomi.extension"
-        const val METADATA_SOURCE_CLASS = "tachiyomi.extension.class"
     }
 
 }

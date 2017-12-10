@@ -1,53 +1,22 @@
 package eu.kanade.tachiyomi.extension.online
 
-import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.network.GET
-import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.asObservableSuccess
 import eu.kanade.tachiyomi.util.asJsoup
-import okhttp3.Headers
-import okhttp3.OkHttpClient
 import okhttp3.Response
 import org.jsoup.nodes.Element
 import rx.Observable
-import uy.kohesive.injekt.injectLazy
 
-class FDroidParser {
-    /**
-     * Network service.
-     */
-    protected val network: NetworkHelper by injectLazy()
-
-    /**
-     * Preferences helper.
-     */
-    protected val preferences: PreferencesHelper by injectLazy()
+class FDroidParser: ExtensionParser() {
 
     /**
      * Base url of the extensions repo
      */
-    val baseUrl: String = "https://fdroid.j2ghz.com/repo/"
+    override val baseUrl = "https://fdroid.j2ghz.com/repo/"
 
-    /**
-     * Headers used for requests.
-     */
-    val headers: Headers by lazy { headersBuilder().build() }
 
-    /**
-     * Default network client for doing requests.
-     */
-    open val client: OkHttpClient
-        get() = network.client
-
-    /**
-     * Headers builder for requests. Implementations can override this method for custom headers.
-     */
-    open protected fun headersBuilder() = Headers.Builder().apply {
-        add("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64)")
-    }
-
-    fun findExtensions(): Observable<List<SExtension>> {
+    override fun findExtensions(): Observable<List<SExtension>> {
         return client.newCall(GET(baseUrl, headers)).asObservableSuccess()
                 .map { response ->
                     extensionsParse(response)
