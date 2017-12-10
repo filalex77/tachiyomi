@@ -177,7 +177,7 @@ open class ExtensionController :
 
         adapter.allBoundViewHolders.forEach { holder ->
             val item = adapter.getItem(holder.adapterPosition) as? ExtensionItem
-            if (item != null && item.extension.url!! == extension.url!!) {
+            if (item != null && item.extension.url == extension.url) {
                 return holder as ExtensionHolder
             }
         }

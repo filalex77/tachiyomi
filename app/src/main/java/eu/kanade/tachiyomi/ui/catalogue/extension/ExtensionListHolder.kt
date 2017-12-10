@@ -5,6 +5,7 @@ import android.view.View
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.extension.model.SExtension
+import eu.kanade.tachiyomi.util.getRound
 import kotlinx.android.synthetic.main.extension_list_item.view.*
 
 /**
@@ -27,7 +28,9 @@ class ExtensionListHolder(private val view: View, adapter: FlexibleAdapter<*>) :
     override fun onSetValues(extension: SExtension) {
         view.title.text = extension.name
         view.version.text = extension.version
-
+        itemView.post {
+            view.image.setImageDrawable(view.image.getRound(extension.name.take(1).toUpperCase(),false))
+        }
         if (!extension.installed) {
             view.install_status.text = view.resources.getString(R.string.not_installed)
             view.install_status.setBackgroundColor(ContextCompat.getColor(view.context, R.color.md_red_500))

@@ -28,13 +28,13 @@ class ExtensionItem(val extension: SExtension) :
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other is ExtensionItem) {
-            return extension.url!! == other.extension.url!!
+            return extension.url == other.extension.url
         }
         return false
     }
 
     override fun hashCode(): Int {
-        return extension.url!!.hashCode()
+        return extension.url.hashCode()
     }
 
 
