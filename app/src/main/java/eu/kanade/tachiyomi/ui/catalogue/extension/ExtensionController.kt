@@ -209,6 +209,9 @@ open class ExtensionController :
      */
     override fun onItemClick(position: Int): Boolean {
         val item = adapter?.getItem(position) as? ExtensionItem ?: return false
+        if (item.extension.upToDate) {
+            return false
+        }
         val appContext = applicationContext
         if (appContext != null) {
             UpdateDownloaderService.downloadUpdate(appContext, item.extension.url)
@@ -216,5 +219,6 @@ open class ExtensionController :
 
         return false
     }
+
 }
 
