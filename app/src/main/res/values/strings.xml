@@ -151,6 +151,8 @@
     <string name="ext_not_installed">Not installed</string>
     <string name="ext_download_dialog">Download extension?</string>
     <string name="ext_download_dialog_positive">Download</string>
+    <string name="ext_uninstall_dialog">Uninstall extension?</string>
+    <string name="ext_uninstall_dialog_positive">Uninstall</string>
       <!-- Reader section -->
     <string name="pref_fullscreen">Fullscreen</string>
     <string name="pref_lock_orientation">Lock orientation</string>

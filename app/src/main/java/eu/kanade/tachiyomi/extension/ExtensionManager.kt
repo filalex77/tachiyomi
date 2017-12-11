@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.extension.online.ExtensionParser
 import eu.kanade.tachiyomi.extension.online.FDroidParser
-import eu.kanade.tachiyomi.source.Source
 import rx.Observable
 
 /**Manages Extensions installed as well as extensions from Repos
@@ -108,6 +107,7 @@ open class ExtensionManager(
         if (installedExt != null) {
             extension.installed = true
             extension.upToDate = extension.version == installedExt.version
+            extension.packageName = installedExt.packageName
         } else {
             extension.installed = false
         }
@@ -115,23 +115,21 @@ open class ExtensionManager(
     }
 
 
-    fun populateInstalledExtensions() {
+    private fun populateInstalledExtensions() {
         val pkgManager = context.packageManager
         val flags = PackageManager.GET_CONFIGURATIONS or PackageManager.GET_SIGNATURES
         val installedPkgs = pkgManager.getInstalledPackages(flags)
         val extPkgs = installedPkgs.filter { it.reqFeatures.orEmpty().any { it.name == ExtensionManager.EXTENSION_FEATURE } }
 
-        val sources = mutableListOf<Source>()
         for (pkgInfo in extPkgs) {
-            val appInfo = pkgManager.getApplicationInfo(pkgInfo.packageName,
+            pkgManager.getApplicationInfo(pkgInfo.packageName,
                     PackageManager.GET_META_DATA) ?: continue
-            val version = pkgInfo.versionName
-            val extName = pkgInfo.packageName.substringAfterLast(".")
 
             val extension = SExtension.create()
-            extension.name = extName
-            extension.version = version
-            extensionsInstalled.put(extName, extension)
+            extension.name = pkgInfo.packageName.substringAfterLast(".")
+            extension.version = pkgInfo.versionName
+            extension.packageName = pkgInfo.packageName
+            extensionsInstalled.put(extension.name, extension)
         }
 
     }

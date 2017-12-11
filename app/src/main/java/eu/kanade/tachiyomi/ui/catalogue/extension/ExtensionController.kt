@@ -1,5 +1,7 @@
 package eu.kanade.tachiyomi.ui.catalogue.extension
 
+import android.content.Intent
+import android.net.Uri
 import android.support.design.widget.Snackbar
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
@@ -23,7 +25,7 @@ import timber.log.Timber
  */
 open class ExtensionController :
         NucleusController<ExtensionPresenter>(),
-        FlexibleAdapter.OnItemClickListener, ExtensionDownloadDialog.Listener {
+        FlexibleAdapter.OnItemClickListener, ExtensionDownloadDialog.Listener, ExtensionUninstallDialog.Listener {
 
     /**
      * Adapter containing the list of manga from the catalogue.
@@ -128,16 +130,17 @@ open class ExtensionController :
      */
     override fun onItemClick(position: Int): Boolean {
         val item = adapter?.getItem(position) as? ExtensionItem ?: return false
-        if (item.extension.upToDate) {
-            return false
-        }
-        val appContext = applicationContext
-        if (appContext != null) {
+        if (!item.extension.upToDate) {
             val dialog = ExtensionDownloadDialog(this, item.extension)
+            dialog.showDialog(router)
+        }
+        if (item.extension.installed) {
+            val dialog = ExtensionUninstallDialog(this, item!!.extension)
             dialog.showDialog(router)
         }
         return false
     }
+
 
     /**
      * Called to update adapter containing sources.
@@ -149,7 +152,15 @@ open class ExtensionController :
     }
 
     override fun downloadExtension(ext: SExtension) {
-        UpdaterService.downloadUpdate(applicationContext!!, ext.url, ext.name + " " +ext.version)
+        UpdaterService.downloadUpdate(applicationContext!!, ext.url, ext.name + " " + ext.version)
+    }
+
+    override fun uninstallExtension(ext: SExtension) {
+        var intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE)
+        intent.data = Uri.parse("package:"+ext.packageName)
+        Timber.d("ext.packagename: %s","package:"+ext.packageName)
+        intent.putExtra(Intent.EXTRA_RETURN_RESULT, true)
+        startActivity(intent)
     }
 
 }

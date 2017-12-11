@@ -9,6 +9,8 @@ interface SExtension {
 
     var lang: String
 
+    var packageName: String
+
     var version: String
 
     var upToDate: Boolean

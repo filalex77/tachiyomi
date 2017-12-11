@@ -10,6 +10,8 @@ class SExtensionImpl : SExtension {
 
     override lateinit var version: String
 
+    override lateinit var packageName: String
+
     override var upToDate: Boolean = false
 
     override var installed: Boolean = false
