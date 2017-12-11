@@ -6,7 +6,6 @@ import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.extension.online.ExtensionParser
 import eu.kanade.tachiyomi.extension.online.FDroidParser
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.ui.catalogue.extension.ExtensionItem
 import rx.Observable
 
 /**Manages Extensions installed as well as extensions from Repos
@@ -19,8 +18,8 @@ open class ExtensionManager(
     private val extensionMap = mutableMapOf<String, SExtension>()
     private val extensionsInstalled = mutableMapOf<String, SExtension>()
 
-    private fun getExtensionCache(): MutableCollection<SExtension> {
-        return extensionMap.values
+    private fun getExtensionCache(): List<SExtension> {
+        return extensionMap.values.toList()
     }
 
 
@@ -33,19 +32,19 @@ open class ExtensionManager(
         return get(key)
     }
 
-    fun getExtensions(): Observable<List<ExtensionItem>> {
+    fun getExtensions(): Observable<List<SExtension>> {
         if (getExtensionCache().isEmpty()) {
             extensionsInstalled.clear()
             populateInstalledExtensions()
 
             //If more sources are added combine find extensions calls.  Then go into the flatMap
-            val findExtensions = fDroidParser.findExtensions();
+            val foundExtensions = fDroidParser.findExtensions()
 
-            return findExtensions.flatMapIterable { it -> it }.filter { it -> registerExtension(it) }.toList().flatMapIterable { it -> it }.filter { it -> filterOutdated(it) }.doOnNext { it -> updateExtensionWithInstalled(it) }.map { it -> ExtensionItem(it) }.toList()
+            return foundExtensions.flatMapIterable { it -> it }.filter { it -> registerExtension(it) }.toList().flatMapIterable { it -> it }.filter { it -> filterOutdated(it) }.doOnNext { it -> updateExtensionWithInstalled(it) }.toList()
         }
         extensionsInstalled.clear()
         populateInstalledExtensions()
-        return Observable.just(getExtensionCache().map { it -> ExtensionItem(it) }.toList())
+        return Observable.just(getExtensionCache())
     }
 
     private fun registerExtension(extension: SExtension): Boolean {

@@ -2,9 +2,7 @@ package eu.kanade.tachiyomi.ui.catalogue.extension
 
 import android.support.design.widget.Snackbar
 import android.support.v4.widget.DrawerLayout
-import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,13 +11,13 @@ import eu.davidea.flexibleadapter.items.IFlexible
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.data.updater.UpdateDownloaderService
-import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
+import eu.kanade.tachiyomi.ui.catalogue.SourceDividerItemDecoration
 import eu.kanade.tachiyomi.ui.catalogue.browse.ProgressItem
 import eu.kanade.tachiyomi.util.gone
 import eu.kanade.tachiyomi.util.snack
 import eu.kanade.tachiyomi.util.visible
-import kotlinx.android.synthetic.main.extension_controller.view.*
+import kotlinx.android.synthetic.main.extension_controller.*
 import timber.log.Timber
 import uy.kohesive.injekt.injectLazy
 
@@ -45,12 +43,6 @@ open class ExtensionController :
      */
     private var snack: Snackbar? = null
 
-
-    /**
-     * Recycler view with the list of results.
-     */
-    private var recycler: RecyclerView? = null
-
     /**
      * Drawer listener to allow swipe only for closing the drawer.
      */
@@ -67,10 +59,7 @@ open class ExtensionController :
     }
 
     override fun getTitle(): String? {
-        if (resources != null) {
-            return resources!!.getString(R.string.pref_category_extensions)
-        }
-        return ""
+        return applicationContext?.getString(R.string.pref_category_extensions)
     }
 
     override fun createPresenter(): ExtensionPresenter {
@@ -85,44 +74,18 @@ open class ExtensionController :
         super.onViewCreated(view)
 
         // Initialize adapter, scroll listener and recycler views
-        adapter = FlexibleAdapter(null, this)
-        setupRecycler(view)
-
-        view.progress?.visible()
+        adapter = ExtensionAdapter(this)
+        // Create recycler and set adapter.
+        ext_recycler.layoutManager = LinearLayoutManager(view.context)
+        ext_recycler.adapter = adapter
+        ext_recycler.addItemDecoration(SourceDividerItemDecoration(view.context))
+        ext_progress.visible()
     }
 
     override fun onDestroyView(view: View) {
-        super.onDestroyView(view)
         adapter = null
+        super.onDestroyView(view)
         snack = null
-        recycler = null
-    }
-
-    private fun setupRecycler(view: View) {
-
-        var oldPosition = RecyclerView.NO_POSITION
-        val oldRecycler = view.extension_view?.getChildAt(1)
-        if (oldRecycler is RecyclerView) {
-            oldPosition = (oldRecycler.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-            oldRecycler.adapter = null
-
-            view.extension_view?.removeView(oldRecycler)
-        }
-
-        val recycler = RecyclerView(view.context).apply {
-            id = R.id.recycler
-            layoutManager = LinearLayoutManager(context)
-            addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
-        }
-        recycler.setHasFixedSize(true)
-        recycler.adapter = adapter
-
-        view.extension_view.addView(recycler, 1)
-
-        if (oldPosition != RecyclerView.NO_POSITION) {
-            recycler.layoutManager.scrollToPosition(oldPosition)
-        }
-        this.recycler = recycler
     }
 
     /**
@@ -151,7 +114,7 @@ open class ExtensionController :
         val message = view!!.context.getString(R.string.error_with_repository)
 
         snack?.dismiss()
-        snack = view?.extension_view?.snack(message, Snackbar.LENGTH_INDEFINITE) {
+        snack = ext_recycler.snack(message, Snackbar.LENGTH_INDEFINITE) {
             setAction(R.string.action_retry) {
                 // If not the first page, show bottom progress bar.
                 if (adapter.mainItemCount > 0) {
@@ -160,36 +123,17 @@ open class ExtensionController :
                 } else {
                     showProgressBar()
                 }
-                presenter.requestAgain()
+                presenter.updateExtensions()
             }
         }
     }
 
-
-    /**
-     * Returns the view holder for the given manga.
-     *
-     * @param manga the manga to find.
-     * @return the holder of the manga or null if it's not bound.
-     */
-    private fun getHolder(extension: SExtension): ExtensionHolder? {
-        val adapter = adapter ?: return null
-
-        adapter.allBoundViewHolders.forEach { holder ->
-            val item = adapter.getItem(holder.adapterPosition) as? ExtensionItem
-            if (item != null && item.extension.url == extension.url) {
-                return holder as ExtensionHolder
-            }
-        }
-
-        return null
-    }
 
     /**
      * Shows the progress bar.
      */
     private fun showProgressBar() {
-        view?.progress?.visible()
+        ext_progress?.visible()
         snack?.dismiss()
         snack = null
     }
@@ -198,7 +142,7 @@ open class ExtensionController :
      * Hides active progress bars.
      */
     private fun hideProgressBar() {
-        view?.progress?.gone()
+        ext_progress?.gone()
     }
 
     /**
@@ -216,8 +160,16 @@ open class ExtensionController :
         if (appContext != null) {
             UpdateDownloaderService.downloadUpdate(appContext, item.extension.url)
         }
-
         return false
+    }
+
+    /**
+     * Called to update adapter containing sources.
+     */
+    fun setExtensions(extensions: List<IFlexible<*>>) {
+        hideProgressBar()
+        adapter?.updateDataSet(extensions)
+
     }
 
 }
