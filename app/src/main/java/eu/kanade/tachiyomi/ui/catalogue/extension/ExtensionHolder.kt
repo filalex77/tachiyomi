@@ -28,14 +28,14 @@ class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewH
             image.setImageDrawable(image.getRound(extension.name.take(1).toUpperCase(), false))
         }
         if (!extension.installed) {
-            install_status.text = containerView!!.resources.getString(R.string.not_installed)
+            install_status.text = containerView!!.resources.getString(R.string.ext_not_installed)
             install_status.setBackgroundColor(ContextCompat.getColor(containerView!!.context, R.color.md_red_500))
         } else {
             if (extension.upToDate) {
-                install_status.text = containerView!!.resources.getString(R.string.up_to_date)
+                install_status.text = containerView!!.resources.getString(R.string.ext_up_to_date)
                 install_status.setBackgroundColor(ContextCompat.getColor(containerView!!.context, R.color.md_blue_A400))
             } else {
-                install_status.text = containerView!!.resources.getString(R.string.out_of_date)
+                install_status.text = containerView!!.resources.getString(R.string.ext_out_of_date)
                 install_status.setBackgroundColor(ContextCompat.getColor(containerView!!.context, R.color.md_teal_500))
 
             }

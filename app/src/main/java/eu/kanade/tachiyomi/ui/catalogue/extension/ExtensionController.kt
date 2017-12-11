@@ -1,7 +1,6 @@
 package eu.kanade.tachiyomi.ui.catalogue.extension
 
 import android.support.design.widget.Snackbar
-import android.support.v4.widget.DrawerLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
@@ -9,29 +8,22 @@ import android.view.ViewGroup
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.items.IFlexible
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.data.updater.UpdateDownloaderService
+import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
 import eu.kanade.tachiyomi.ui.catalogue.SourceDividerItemDecoration
-import eu.kanade.tachiyomi.ui.catalogue.browse.ProgressItem
 import eu.kanade.tachiyomi.util.gone
 import eu.kanade.tachiyomi.util.snack
 import eu.kanade.tachiyomi.util.visible
 import kotlinx.android.synthetic.main.extension_controller.*
 import timber.log.Timber
-import uy.kohesive.injekt.injectLazy
 
 /**
  * Controller to manage the catalogues available in the app.
  */
 open class ExtensionController :
         NucleusController<ExtensionPresenter>(),
-        FlexibleAdapter.OnItemClickListener {
-
-    /**
-     * Preferences helper.
-     */
-    private val preferences: PreferencesHelper by injectLazy()
+        FlexibleAdapter.OnItemClickListener, ExtensionDownloadDialog.Listener {
 
     /**
      * Adapter containing the list of manga from the catalogue.
@@ -42,17 +34,6 @@ open class ExtensionController :
      * Snackbar containing an error message when a request fails.
      */
     private var snack: Snackbar? = null
-
-    /**
-     * Drawer listener to allow swipe only for closing the drawer.
-     */
-    private var drawerListener: DrawerLayout.DrawerListener? = null
-
-
-    /**
-     * Endless loading item.
-     */
-    private var progressItem: ProgressItem? = null
 
     init {
         setHasOptionsMenu(true)
@@ -116,13 +97,7 @@ open class ExtensionController :
         snack?.dismiss()
         snack = ext_recycler.snack(message, Snackbar.LENGTH_INDEFINITE) {
             setAction(R.string.action_retry) {
-                // If not the first page, show bottom progress bar.
-                if (adapter.mainItemCount > 0) {
-                    val item = progressItem ?: return@setAction
-                    adapter.addScrollableFooterWithDelay(item, 0, true)
-                } else {
-                    showProgressBar()
-                }
+                showProgressBar()
                 presenter.updateExtensions()
             }
         }
@@ -158,7 +133,8 @@ open class ExtensionController :
         }
         val appContext = applicationContext
         if (appContext != null) {
-            UpdateDownloaderService.downloadUpdate(appContext, item.extension.url)
+            val dialog = ExtensionDownloadDialog(this, item.extension)
+            dialog.showDialog(router)
         }
         return false
     }
@@ -170,6 +146,10 @@ open class ExtensionController :
         hideProgressBar()
         adapter?.updateDataSet(extensions)
 
+    }
+
+    override fun downloadExtension(ext: SExtension) {
+        UpdateDownloaderService.downloadUpdate(applicationContext!!, ext.url)
     }
 
 }
