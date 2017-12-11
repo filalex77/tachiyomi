@@ -149,7 +149,7 @@
     <string name="ext_out_of_date">New version</string>
     <string name="ext_up_to_date">Up to date</string>
     <string name="ext_not_installed">Not installed</string>
-    <string name="ext_download_dialog">Download Extension?</string>
+    <string name="ext_download_dialog">Download extension?</string>
     <string name="ext_download_dialog_positive">Download</string>
       <!-- Reader section -->
     <string name="pref_fullscreen">Fullscreen</string>
