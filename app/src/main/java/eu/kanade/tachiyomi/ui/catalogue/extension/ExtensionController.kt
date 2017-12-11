@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.items.IFlexible
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.data.updater.UpdateDownloaderService
+import eu.kanade.tachiyomi.data.updater.UpdaterService
 import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
 import eu.kanade.tachiyomi.ui.catalogue.SourceDividerItemDecoration
@@ -149,7 +149,7 @@ open class ExtensionController :
     }
 
     override fun downloadExtension(ext: SExtension) {
-        UpdateDownloaderService.downloadUpdate(applicationContext!!, ext.url)
+        UpdaterService.downloadUpdate(applicationContext!!, ext.url, ext.name + " " +ext.version)
     }
 
 }
