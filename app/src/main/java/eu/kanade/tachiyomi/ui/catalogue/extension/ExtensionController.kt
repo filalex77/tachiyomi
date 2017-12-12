@@ -29,8 +29,6 @@ import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 
-
-
 /**
  * Controller to manage the catalogues available in the app.
  */
@@ -174,7 +172,7 @@ open class ExtensionController :
             intent.putExtra(Intent.EXTRA_RETURN_RESULT, true)
             startActivity(intent)
         }
-        processObserverWithRestart(uninstallObserver, 1L)
+        processObserverWithRestart(uninstallObserver, 2L)
     }
 
     override fun restart() {
