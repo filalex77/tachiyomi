@@ -18,14 +18,17 @@ import eu.kanade.tachiyomi.util.gone
 import eu.kanade.tachiyomi.util.snack
 import eu.kanade.tachiyomi.util.visible
 import kotlinx.android.synthetic.main.extension_controller.*
+import rx.Observable
+import rx.android.schedulers.AndroidSchedulers
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 /**
  * Controller to manage the catalogues available in the app.
  */
 open class ExtensionController :
         NucleusController<ExtensionPresenter>(),
-        FlexibleAdapter.OnItemClickListener, ExtensionDownloadDialog.Listener, ExtensionUninstallDialog.Listener {
+        FlexibleAdapter.OnItemClickListener, ExtensionDownloadDialog.Listener, ExtensionUninstallDialog.Listener, ExtensionRestartDialog.Listener {
 
     /**
      * Adapter containing the list of manga from the catalogue.
@@ -152,14 +155,31 @@ open class ExtensionController :
     }
 
     override fun downloadExtension(ext: SExtension) {
-        UpdaterService.downloadUpdate(applicationContext!!, ext.url, ext.name + " " + ext.version)
+        val downloadExtObservable = Observable.fromCallable { UpdaterService.downloadExtension(applicationContext!!, ext.url, ext.name + " " + ext.version) }
+        processObserverWithRestart(downloadExtObservable)
     }
 
     override fun uninstallExtension(ext: SExtension) {
-        var intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE)
-        intent.data = Uri.parse("package:"+ext.packageName)
-        intent.putExtra(Intent.EXTRA_RETURN_RESULT, true)
-        startActivity(intent)
+        val uninstallObserver = Observable.fromCallable {
+            var intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE)
+            intent.data = Uri.parse("package:" + ext.packageName)
+            intent.putExtra(Intent.EXTRA_RETURN_RESULT, true)
+            startActivity(intent)
+        }
+        processObserverWithRestart(uninstallObserver)
+    }
+
+    override fun restart() {
+
+    }
+    private fun getDelayObserver():Observable<Unit>{
+        return Observable.empty<Unit>().delay(5L, TimeUnit.SECONDS)
+    }
+
+    private fun processObserverWithRestart(observer:Observable<Unit>){
+        observer.concatWith(getDelayObserver()).observeOn(AndroidSchedulers.mainThread()).doOnCompleted {
+            ExtensionRestartDialog(this).showDialog(router)
+        }.doOnError { it -> Timber.e(it) }.subscribe()
     }
 
 }

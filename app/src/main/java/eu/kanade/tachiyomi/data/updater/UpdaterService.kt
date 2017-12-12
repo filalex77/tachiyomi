@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.notification.NotificationHandler
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.ProgressListener
@@ -29,10 +30,13 @@ class UpdaterService : IntentService(UpdaterService::class.java.name) {
 
     override fun onHandleIntent(intent: Intent?) {
         if (intent == null) return
-
         val title = intent.getStringExtra(EXTRA_DOWNLOAD_TITLE) ?: getString(R.string.app_name)
         val url = intent.getStringExtra(EXTRA_DOWNLOAD_URL) ?: return
-        downloadApk(title, url)
+        if (intent.getBooleanExtra(EXTRA_EXTENSION, false)) {
+            downloadApkExtension(title, url)
+        } else {
+            downloadApk(title, url)
+        }
     }
 
     /**
@@ -83,6 +87,36 @@ class UpdaterService : IntentService(UpdaterService::class.java.name) {
         }
     }
 
+    /**
+     * Called to start downloading apk of new update
+     *
+     * @param url url location of file
+     */
+    private fun downloadApkExtension(title: String, url: String) {
+        // Show notification download starting.
+        notifier.onDownloadStarted(title, false)
+
+        try {
+            // Download the new update.
+            val response = network.client.newCall(GET(url)).execute()
+
+            // File where the apk will be saved.
+            val apkFile = File(externalCacheDir, title + ".apk")
+
+            if (response.isSuccessful) {
+                response.body()!!.source().saveTo(apkFile)
+            } else {
+                response.close()
+                throw Exception("Unsuccessful response")
+            }
+            notifier.onDownloadFinished(title)
+            NotificationHandler.installApkActivity(this.applicationContext, apkFile.getUriCompat(this))
+        } catch (error: Exception) {
+            Timber.e(error)
+            notifier.onDownloadError(url)
+        }
+    }
+
     companion object {
         /**
          * Download url.
@@ -93,6 +127,11 @@ class UpdaterService : IntentService(UpdaterService::class.java.name) {
          * Download title
          */
         internal const val EXTRA_DOWNLOAD_TITLE = "${BuildConfig.APPLICATION_ID}.UpdaterService.DOWNLOAD_TITLE"
+
+        /**
+         * is extension
+         */
+        internal const val EXTRA_EXTENSION = "${BuildConfig.APPLICATION_ID}.UpdaterService.IS_EXTENSION"
 
         /**
          * Downloads a new update and let the user install the new version from a notification.
@@ -106,6 +145,21 @@ class UpdaterService : IntentService(UpdaterService::class.java.name) {
             }
             context.startService(intent)
         }
+
+        /**
+         * Downloads an extension, prompts on screen to install
+         * @param context the application context.
+         * @param url the url to the new update.
+         */
+        fun downloadExtension(context: Context, url: String, title: String = context.getString(R.string.app_name)) {
+            val intent = Intent(context, UpdaterService::class.java).apply {
+                putExtra(EXTRA_DOWNLOAD_TITLE, title)
+                putExtra(EXTRA_DOWNLOAD_URL, url)
+                putExtra(EXTRA_EXTENSION, true)
+            }
+            context.startService(intent)
+        }
+
 
         /**
          * Returns [PendingIntent] that starts a service which downloads the apk specified in url.

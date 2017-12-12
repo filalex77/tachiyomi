@@ -53,4 +53,17 @@ object NotificationHandler {
         }
         return PendingIntent.getActivity(context, 0, intent, 0)
     }
+    /**
+     * Returns [PendingIntent] that prompts user with apk install intent
+     *
+     * @param context context
+     * @param uri uri of apk that is installed
+     */
+    fun installApkActivity(context: Context, uri: Uri) {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+        }
+        context.startActivity(intent)
+    }
 }
