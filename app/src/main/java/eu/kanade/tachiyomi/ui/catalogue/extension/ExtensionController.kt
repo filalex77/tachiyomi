@@ -158,7 +158,6 @@ open class ExtensionController :
     override fun uninstallExtension(ext: SExtension) {
         var intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE)
         intent.data = Uri.parse("package:"+ext.packageName)
-        Timber.d("ext.packagename: %s","package:"+ext.packageName)
         intent.putExtra(Intent.EXTRA_RETURN_RESULT, true)
         startActivity(intent)
     }
