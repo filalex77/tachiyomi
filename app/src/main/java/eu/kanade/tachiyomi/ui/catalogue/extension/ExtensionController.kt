@@ -1,7 +1,11 @@
 package eu.kanade.tachiyomi.ui.catalogue.extension
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Process
 import android.support.design.widget.Snackbar
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
@@ -14,6 +18,7 @@ import eu.kanade.tachiyomi.data.updater.UpdaterService
 import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
 import eu.kanade.tachiyomi.ui.catalogue.SourceDividerItemDecoration
+import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.util.gone
 import eu.kanade.tachiyomi.util.snack
 import eu.kanade.tachiyomi.util.visible
@@ -22,6 +27,9 @@ import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
+
+
+
 
 /**
  * Controller to manage the catalogues available in the app.
@@ -156,7 +164,7 @@ open class ExtensionController :
 
     override fun downloadExtension(ext: SExtension) {
         val downloadExtObservable = Observable.fromCallable { UpdaterService.downloadExtension(applicationContext!!, ext.url, ext.name + " " + ext.version) }
-        processObserverWithRestart(downloadExtObservable)
+        processObserverWithRestart(downloadExtObservable, 5L)
     }
 
     override fun uninstallExtension(ext: SExtension) {
@@ -166,18 +174,23 @@ open class ExtensionController :
             intent.putExtra(Intent.EXTRA_RETURN_RESULT, true)
             startActivity(intent)
         }
-        processObserverWithRestart(uninstallObserver)
+        processObserverWithRestart(uninstallObserver, 1L)
     }
 
     override fun restart() {
-
+        var launchIntent = Intent(this.applicationContext!!, MainActivity::class.java)
+        var intent = PendingIntent.getActivity(applicationContext, 0, launchIntent, 0)
+        var manager = this.applicationContext!!.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        manager.set(AlarmManager.RTC, System.currentTimeMillis() + 1000, intent)
+        Process.killProcess(Process.myPid())
     }
-    private fun getDelayObserver():Observable<Unit>{
-        return Observable.empty<Unit>().delay(5L, TimeUnit.SECONDS)
+
+    private fun getDelayObserver(delayTime: Long): Observable<Unit> {
+        return Observable.empty<Unit>().delay(delayTime, TimeUnit.SECONDS)
     }
 
-    private fun processObserverWithRestart(observer:Observable<Unit>){
-        observer.concatWith(getDelayObserver()).observeOn(AndroidSchedulers.mainThread()).doOnCompleted {
+    private fun processObserverWithRestart(observer: Observable<Unit>, delayTime: Long) {
+        observer.concatWith(getDelayObserver(delayTime)).observeOn(AndroidSchedulers.mainThread()).doOnCompleted {
             ExtensionRestartDialog(this).showDialog(router)
         }.doOnError { it -> Timber.e(it) }.subscribe()
     }
