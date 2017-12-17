@@ -21,8 +21,8 @@ class SourceLoginDialog(bundle: Bundle? = null) : LoginDialogPreference(bundle) 
 
     override fun setCredentialsOnView(view: View) = with(view) {
         dialog_title.text = context.getString(R.string.login_title, source.toString())
-        username.setText(preferences.sourceUsername(source))
-        password.setText(preferences.sourcePassword(source))
+        username.setText(source.getUserName())
+        password.setText(source.getPassword())
     }
 
     override fun checkLogin() {
@@ -39,14 +39,11 @@ class SourceLoginDialog(bundle: Bundle? = null) : LoginDialogPreference(bundle) 
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ logged ->
                         if (logged) {
-                            preferences.setSourceCredentials(source,
-                                    username.text.toString(),
-                                    password.text.toString())
-
+                            source.setUserNameAndPassword(username.text.toString(), password.text.toString())
                             dialog?.dismiss()
                             context.toast(R.string.login_success)
                         } else {
-                            preferences.setSourceCredentials(source, "", "")
+                            source.setUserNameAndPassword(username.text.toString(), password.text.toString())
                             login.progress = -1
                         }
                     }, { error ->

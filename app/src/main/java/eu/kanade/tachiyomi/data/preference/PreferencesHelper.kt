@@ -8,7 +8,6 @@ import com.f2prateek.rx.preferences.Preference
 import com.f2prateek.rx.preferences.RxSharedPreferences
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.track.TrackService
-import eu.kanade.tachiyomi.source.Source
 import java.io.File
 import eu.kanade.tachiyomi.data.preference.PreferenceKeys as Keys
 
@@ -90,17 +89,6 @@ class PreferencesHelper(val context: Context) {
     fun catalogueAsList() = rxPrefs.getBoolean(Keys.catalogueAsList, false)
 
     fun enabledLanguages() = rxPrefs.getStringSet(Keys.enabledLanguages, setOf("en"))
-
-    fun sourceUsername(source: Source) = prefs.getString(Keys.sourceUsername(source.id), "")
-
-    fun sourcePassword(source: Source) = prefs.getString(Keys.sourcePassword(source.id), "")
-
-    fun setSourceCredentials(source: Source, username: String, password: String) {
-        prefs.edit()
-                .putString(Keys.sourceUsername(source.id), username)
-                .putString(Keys.sourcePassword(source.id), password)
-                .apply()
-    }
 
     fun trackUsername(sync: TrackService) = prefs.getString(Keys.trackUsername(sync.id), "")
 
