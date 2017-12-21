@@ -107,9 +107,7 @@ object PreferenceKeys {
 
     const val downloadBadge = "display_download_badge"
 
-    fun sourceUsername(sourceId: Long) = "pref_source_username_$sourceId"
-
-    fun sourcePassword(sourceId: Long) = "pref_source_password_$sourceId"
+    fun sourceSharedPref(sourceId: Long) = "source_$sourceId"
 
     fun trackUsername(syncId: Int) = "pref_mangasync_username_$syncId"
 

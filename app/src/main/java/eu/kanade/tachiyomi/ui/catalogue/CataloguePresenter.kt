@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.ui.catalogue
 
 import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
+import eu.kanade.tachiyomi.data.preference.PreferenceKeys
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.data.preference.getOrDefault
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -68,7 +69,7 @@ class CataloguePresenter(
         }
         sourceItems.forEach {
             if (it.source is SourceWithPreferences) {
-                it.source.sharedPreference = preferences.context.getSharedPreferences("source_" + it.source.id, MODE_PRIVATE)
+                it.source.sharedPreference = preferences.context.getSharedPreferences(PreferenceKeys.sourceSharedPref(it.source.id), MODE_PRIVATE)
             }
         }
         sourceSubscription = Observable.just(sourceItems)

@@ -11,6 +11,7 @@ import android.os.Process
 import android.support.v7.preference.PreferenceScreen
 import com.afollestad.materialdialogs.MaterialDialog
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.preference.PreferenceKeys
 import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.SourceWithPreferences
@@ -36,7 +37,7 @@ class SettingsExtensionDetailController(bundle: Bundle? = null) : SettingsContro
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        preferenceManager.sharedPreferencesName = "source_" + ext.source
+        preferenceManager.sharedPreferencesName = PreferenceKeys.sourceSharedPref(ext.source)
         super.onCreatePreferences(savedInstanceState, rootKey)
     }
 
@@ -45,21 +46,23 @@ class SettingsExtensionDetailController(bundle: Bundle? = null) : SettingsContro
         titleRes = R.string.ext_details
         preferenceCategory {
             title = ext.name.capitalize() + " " + ext.version
-        }
-        preference {
-            title = "Uninstall"
-            onClick {
-                val ctrl = UninstallDialog(ext!!)
-                ctrl.targetController = this@SettingsExtensionDetailController
-                ctrl.showDialog(router)
+            preference {
+                titleRes = R.string.ext_uninstall
+                onClick {
+                    val ctrl = UninstallDialog(ext!!)
+                    ctrl.targetController = this@SettingsExtensionDetailController
+                    ctrl.showDialog(router)
+                }
             }
         }
         var source = sourceManager.get(ext!!.source)
         if (source is SourceWithPreferences) {
+            preferenceCategory {
+                titleRes = R.string.ext_preferences
             source.sharedPreference = preferenceManager.sharedPreferences
             if (source is LoginSource) {
                 preference {
-                    title = "Login"
+                    titleRes = R.string.login
                     onClick {
                         val dialog = SourceLoginDialog(source)
                         dialog.targetController = this@SettingsExtensionDetailController
@@ -68,7 +71,6 @@ class SettingsExtensionDetailController(bundle: Bundle? = null) : SettingsContro
                 }
             }
             val all = source.sharedPreference.all
-            preferenceCategory {
                 for (c in all) {
                     when (c.value) {
                         is String -> {
