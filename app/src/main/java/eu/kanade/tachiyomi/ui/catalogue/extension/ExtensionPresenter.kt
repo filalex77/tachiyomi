@@ -33,12 +33,16 @@ open class ExtensionPresenter(
             extensionManager.clearCache()
         }
         val getExt = extensionManager.getExtensions().flatMapIterable { it -> it }
-        val extItems = getExt.groupBy { it -> it.installed }.flatMap { it -> it.toList() }.map { it -> getExtensionItems(it) }
-        repoSubscription = extItems.toList().observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribeLatestCache(
+        val extItems = getExt.groupBy { it -> it.installed }.flatMap { it -> it.toList() }.map { it -> getExtensionItems(it) }.toList()
+        repoSubscription = extItems.observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribeLatestCache(
                 { view, ext ->
                     Timber.d("set Extension")
-                    val flatten = ext.flatten().sortedWith(compareBy({ it.extension.lang }, { !it.extension.upToDate }, { !it.extension.installed }, { it.extension.name }))
-                    view?.setExtensions(flatten)
+                    ext.forEach {
+                        Timber.d("ext size %s", it.size)
+                    }
+
+                    val sorted = ext.flatten().sortedWith(compareBy<ExtensionItem> { !it.extension.installed }.thenBy {it.extension.upToDate }.thenBy { it.extension.lang }.thenBy { it.extension.name })
+                    view?.setExtensions(sorted)
                 },
                 { _, error ->
                     Timber.e(error)

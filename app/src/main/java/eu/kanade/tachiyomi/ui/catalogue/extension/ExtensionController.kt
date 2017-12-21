@@ -17,7 +17,6 @@ import eu.kanade.tachiyomi.data.updater.UpdaterService
 import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
 import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
-import eu.kanade.tachiyomi.ui.catalogue.SourceDividerItemDecoration
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.setting.SettingsExtensionDetailController
 import eu.kanade.tachiyomi.util.gone
@@ -70,7 +69,7 @@ open class ExtensionController :
         // Create recycler and set adapter.
         ext_recycler.layoutManager = LinearLayoutManager(view.context)
         ext_recycler.adapter = adapter
-        ext_recycler.addItemDecoration(SourceDividerItemDecoration(view.context))
+        ext_recycler.addItemDecoration(ExtensionDividerItemDecoration(view.context))
         ext_progress.visible()
     }
 
@@ -78,18 +77,6 @@ open class ExtensionController :
         adapter = null
         super.onDestroyView(view)
         snack = null
-    }
-
-    /**
-     * Called from the presenter when the network request is received.
-     *
-     * @param page the current page.
-     * @param mangas the list of manga of the page.
-     */
-    fun onAdd(extension: List<ExtensionItem>) {
-        val adapter = adapter ?: return
-        hideProgressBar()
-        adapter.onLoadMoreComplete(extension)
     }
 
     /**
