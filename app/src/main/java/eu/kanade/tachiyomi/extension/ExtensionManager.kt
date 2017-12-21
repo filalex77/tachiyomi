@@ -57,8 +57,13 @@ open class ExtensionManager(
 
     private fun addInstalledExtension(it: MutableList<SExtension>) {
         val values = extensionsInstalled.values
+        it.forEach {
+            Timber.d("extensions %s %s", it.name, it.version)
+        }
         for (sExtension in values) {
+            Timber.d("extension compare , %s %s", sExtension.name, it.contains(sExtension))
             if (!it.contains(sExtension)) {
+                Timber.d("extension not on server , %s %s", sExtension.name, sExtension.version)
                 sExtension.upToDate = true
                 it.add(sExtension)
             }
@@ -127,6 +132,7 @@ open class ExtensionManager(
         if (installedExt != null) {
             extension.installed = true
             extension.upToDate = extension.version == installedExt.version
+            extension.version = installedExt.version + " -> " + extension.version
             extension.packageName = installedExt.packageName
             extension.source = installedExt.source
         } else {
@@ -152,8 +158,6 @@ open class ExtensionManager(
             extension.packageName = pkgInfo.packageName
             extension.lang = pkgInfo.packageName.substringAfter("eu.kanade.tachiyomi.extension.").substringBefore(".")
             extension.installed = true
-
-            Timber.d("Package name %s", extension.packageName)
 
             val trim = appInfo.metaData.getString(ExtensionManager.METADATA_SOURCE_CLASS)
                     .split(";").first().trim()

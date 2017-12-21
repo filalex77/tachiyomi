@@ -1,7 +1,7 @@
 package eu.kanade.tachiyomi.extension.model
 
 
-interface SExtension : Comparator<SExtension> {
+interface SExtension {
 
     var url: String
 
@@ -17,7 +17,7 @@ interface SExtension : Comparator<SExtension> {
 
     var installed: Boolean
 
-    var source : Long
+    var source: Long
 
 
     companion object {

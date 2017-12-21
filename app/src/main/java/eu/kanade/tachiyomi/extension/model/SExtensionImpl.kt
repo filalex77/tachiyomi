@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.extension.model
 
 class SExtensionImpl : SExtension {
 
+
     override lateinit var url: String
 
     override lateinit var name: String
@@ -19,8 +20,15 @@ class SExtensionImpl : SExtension {
 
     override var installed: Boolean = false
 
-    override fun compare(o1: SExtension?, o2: SExtension?): Int {
-       return o1!!.name.compareTo(o2!!.name)
+    override fun equals(other: Any?): Boolean {
+        return when (other) {
+            is SExtension -> name == other.name
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return name.hashCode()
     }
 
 }
