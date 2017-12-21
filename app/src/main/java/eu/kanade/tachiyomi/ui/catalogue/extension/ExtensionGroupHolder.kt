@@ -5,18 +5,14 @@ import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.base.holder.BaseFlexibleViewHolder
 import kotlinx.android.synthetic.main.extension_controller_card.*
-import java.util.*
 
-class LangExtHolder(view: View, adapter: FlexibleAdapter<*>) :
+class ExtensionGroupHolder(view: View, adapter: FlexibleAdapter<*>) :
         BaseFlexibleViewHolder(view, adapter, true) {
 
-    fun bind(item: LangExtItem) {
+    fun bind(item: ExtensionGroupItem) {
         title.text = when {
-            item.code == "" -> itemView.context.getString(R.string.other_source)
-            else -> {
-                val locale = Locale(item.code)
-                locale.getDisplayName(locale).capitalize()
-            }
-        }
+            item.installed -> itemView.context.getString(R.string.ext_installed)
+            else -> itemView.context.getString(R.string.ext_available)
+        } + " (" + item.size + ")"
     }
 }

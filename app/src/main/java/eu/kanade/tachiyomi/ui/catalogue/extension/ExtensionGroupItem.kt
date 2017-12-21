@@ -10,7 +10,7 @@ import eu.kanade.tachiyomi.R
  *
  * @param code The lang code.
  */
-data class LangExtItem(val code: String) : AbstractHeaderItem<LangExtHolder>() {
+data class ExtensionGroupItem(val installed: Boolean, val size : Int) : AbstractHeaderItem<ExtensionGroupHolder>() {
 
     /**
      * Returns the layout resource of this item.
@@ -22,14 +22,14 @@ data class LangExtItem(val code: String) : AbstractHeaderItem<LangExtHolder>() {
     /**
      * Creates a new view holder for this item.
      */
-    override fun createViewHolder(view: View, adapter: FlexibleAdapter<*>): LangExtHolder {
-        return LangExtHolder(view, adapter)
+    override fun createViewHolder(view: View, adapter: FlexibleAdapter<*>): ExtensionGroupHolder {
+        return ExtensionGroupHolder(view, adapter)
     }
 
     /**
      * Binds this item to the given view holder.
      */
-    override fun bindViewHolder(adapter: FlexibleAdapter<*>, holder: LangExtHolder,
+    override fun bindViewHolder(adapter: FlexibleAdapter<*>, holder: ExtensionGroupHolder,
                                 position: Int, payloads: List<Any?>?) {
 
         holder.bind(this)

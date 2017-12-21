@@ -29,7 +29,7 @@ class FDroidParser: ExtensionParser() {
         return document.select(extensionSelector()).map { extensionFromElement(it) }
     }
 
-    private fun extensionSelector() = "a[href]:matches(tachiyomi-[A-Za-z]{2}\\..*)"
+    private fun extensionSelector() = "a[href]:matches(tachiyomi-[A-Za-z]{2,3}\\..*)"
 
     private fun extensionFromElement(element: Element): SExtension {
         val urlElement = element.allElements.first()
@@ -41,9 +41,9 @@ class FDroidParser: ExtensionParser() {
         extension.lang = name.substringBefore(".")
         name = name.removePrefix(extension.lang + ".")
         extension.name = name.substringBefore("-")
-        name = name.removeSuffix("-debug.apk")
+        name = name.substringBefore("-debug")
+        name =name.substringBefore("-release")
         extension.version = name.substringAfter("-v")
-
         return extension
     }
 }

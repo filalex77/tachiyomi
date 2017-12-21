@@ -1,7 +1,6 @@
 package eu.kanade.tachiyomi.ui.catalogue.extension
 
 import android.os.Build
-import android.support.v4.content.ContextCompat
 import android.view.View
 import android.view.ViewGroup
 import eu.kanade.tachiyomi.R
@@ -10,6 +9,7 @@ import eu.kanade.tachiyomi.util.dpToPx
 import eu.kanade.tachiyomi.util.getRound
 import io.github.mthli.slice.Slice
 import kotlinx.android.synthetic.main.extension_controller_card_item.*
+import java.util.*
 
 class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewHolder(view, adapter) {
 
@@ -17,26 +17,39 @@ class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewH
         setColor(adapter.cardBackground)
     }
 
+    init {
+        ext_button.setOnClickListener {
+            adapter.buttonClickListener.onButtonClick(adapterPosition)
+        }
+
+    }
+
     fun bind(item: ExtensionItem) {
         val extension = item.extension
         setCardEdges(item)
 
         // Set source name
-        title.text = extension.name
+        ext_title.text = extension.name
         version.text = extension.version
+        lang.text = when {
+            extension.lang == "" -> itemView.context.getString(R.string.other_source)
+            extension.lang == "all" -> itemView.context.getString(R.string.all_lang)
+            else -> {
+                val locale = Locale(extension.lang)
+                locale.getDisplayName(locale).capitalize()
+            }
+        }
         itemView.post {
             image.setImageDrawable(image.getRound(extension.name.take(1).toUpperCase(), false))
         }
         if (!extension.installed) {
-            install_status.text = containerView!!.resources.getString(R.string.ext_not_installed)
-            install_status.setBackgroundColor(ContextCompat.getColor(containerView!!.context, R.color.md_red_500))
+            ext_button.text = itemView.context.getString(R.string.ext_install)
         } else {
             if (extension.upToDate) {
-                install_status.text = containerView!!.resources.getString(R.string.ext_up_to_date)
-                install_status.setBackgroundColor(ContextCompat.getColor(containerView!!.context, R.color.md_blue_A400))
+                ext_button.text = itemView.context.getString(R.string.ext_details)
+
             } else {
-                install_status.text = containerView!!.resources.getString(R.string.ext_out_of_date)
-                install_status.setBackgroundColor(ContextCompat.getColor(containerView!!.context, R.color.md_teal_500))
+                ext_button.text = itemView.context.getString(R.string.ext_update)
 
             }
         }

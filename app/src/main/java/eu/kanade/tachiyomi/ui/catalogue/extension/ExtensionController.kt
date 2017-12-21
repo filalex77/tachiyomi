@@ -4,7 +4,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Process
 import android.support.design.widget.Snackbar
 import android.support.v7.widget.LinearLayoutManager
@@ -17,8 +16,10 @@ import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.updater.UpdaterService
 import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
+import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
 import eu.kanade.tachiyomi.ui.catalogue.SourceDividerItemDecoration
 import eu.kanade.tachiyomi.ui.main.MainActivity
+import eu.kanade.tachiyomi.ui.setting.SettingsExtensionDetailController
 import eu.kanade.tachiyomi.util.gone
 import eu.kanade.tachiyomi.util.snack
 import eu.kanade.tachiyomi.util.visible
@@ -33,8 +34,7 @@ import java.util.concurrent.TimeUnit
  * Controller to manage the catalogues available in the app.
  */
 open class ExtensionController :
-        NucleusController<ExtensionPresenter>(),
-        FlexibleAdapter.OnItemClickListener, ExtensionDownloadDialog.Listener, ExtensionUninstallDialog.Listener, ExtensionRestartDialog.Listener {
+        NucleusController<ExtensionPresenter>(), ExtensionAdapter.OnButtonClickListener, ExtensionDownloadDialog.Listener, ExtensionRestartDialog.Listener {
 
     /**
      * Adapter containing the list of manga from the catalogue.
@@ -109,7 +109,7 @@ open class ExtensionController :
         snack = ext_recycler.snack(message, Snackbar.LENGTH_INDEFINITE) {
             setAction(R.string.action_retry) {
                 showProgressBar()
-                presenter.updateExtensions()
+                presenter.updateExtensions(true)
             }
         }
     }
@@ -124,6 +124,7 @@ open class ExtensionController :
         snack = null
     }
 
+
     /**
      * Hides active progress bars.
      */
@@ -131,27 +132,22 @@ open class ExtensionController :
         ext_progress?.gone()
     }
 
-    /**
-     * Called when a extension is clicked.
-     *
-     * @param position the position of the element clicked.
-     * @return true if the item should be selected, false otherwise.
-     */
-    override fun onItemClick(position: Int): Boolean {
-        val item = adapter?.getItem(position) as? ExtensionItem ?: return false
-        if (!item.extension.upToDate) {
+    override fun onButtonClick(position: Int) {
+        val item = adapter!!.getItem(position) as? ExtensionItem
+        if (item!!.extension.upToDate) {
+            //launch details page
+            router.pushController(SettingsExtensionDetailController(item!!.extension).withFadeTransaction())
+
+        }else{
             val dialog = ExtensionDownloadDialog(this, item.extension)
             dialog.showDialog(router)
         }
-        if (item.extension.installed) {
-            val dialog = ExtensionUninstallDialog(this, item!!.extension)
-            dialog.showDialog(router)
-        }
-        return false
+
     }
 
 
-    /**
+
+        /**
      * Called to update adapter containing sources.
      */
     fun setExtensions(extensions: List<IFlexible<*>>) {
@@ -163,16 +159,6 @@ open class ExtensionController :
     override fun downloadExtension(ext: SExtension) {
         val downloadExtObservable = Observable.fromCallable { UpdaterService.downloadExtension(applicationContext!!, ext.url, ext.name + " " + ext.version) }
         processObserverWithRestart(downloadExtObservable, 5L)
-    }
-
-    override fun uninstallExtension(ext: SExtension) {
-        val uninstallObserver = Observable.fromCallable {
-            var intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE)
-            intent.data = Uri.parse("package:" + ext.packageName)
-            intent.putExtra(Intent.EXTRA_RETURN_RESULT, true)
-            startActivity(intent)
-        }
-        processObserverWithRestart(uninstallObserver, 2L)
     }
 
     override fun restart() {

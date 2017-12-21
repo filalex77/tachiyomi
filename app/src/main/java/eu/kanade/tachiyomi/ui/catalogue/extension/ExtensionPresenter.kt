@@ -27,10 +27,13 @@ open class ExtensionPresenter(
     }
 
 
-    fun updateExtensions() {
+    fun updateExtensions(clearCache : Boolean = false) {
         repoSubscription?.unsubscribe()
+        if(clearCache){
+            extensionManager.clearCache()
+        }
         val getExt = extensionManager.getExtensions().flatMapIterable { it -> it }
-        val extItems = getExt.groupBy { it -> it.lang }.flatMap { it -> it.toList() }.map { it -> getExtensionItems(it) }
+        val extItems = getExt.groupBy { it -> it.installed }.flatMap { it -> it.toList() }.map { it -> getExtensionItems(it) }
         repoSubscription = extItems.toList().observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribeLatestCache(
                 { view, ext ->
                     Timber.d("set Extension")
@@ -45,7 +48,7 @@ open class ExtensionPresenter(
     }
 
     private fun getExtensionItems(ext: MutableList<SExtension>): List<ExtensionItem> {
-        val langItem = LangExtItem(ext[0].lang)
+        val langItem = ExtensionGroupItem(ext[0].installed, ext.size )
         var extItems: MutableList<ExtensionItem> = arrayListOf()
         ext.forEach { ex ->
             extItems.add(ExtensionItem(ex, langItem))

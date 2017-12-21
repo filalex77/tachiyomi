@@ -13,8 +13,8 @@ import eu.kanade.tachiyomi.source.CatalogueSource
  * @param source Instance of [CatalogueSource] containing source information.
  * @param header The header for this item.
  */
-data class ExtensionItem(val extension: SExtension, val header: LangExtItem? = null) :
-        AbstractSectionableItem<ExtensionHolder, LangExtItem>(header) {
+data class ExtensionItem(val extension: SExtension, val header: ExtensionGroupItem? = null) :
+        AbstractSectionableItem<ExtensionHolder, ExtensionGroupItem>(header) {
 
     /**
      * Returns the layout resource of this item.
@@ -42,13 +42,13 @@ data class ExtensionItem(val extension: SExtension, val header: LangExtItem? = n
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other is ExtensionItem) {
-            return extension.url == other.extension.url
+            return extension.name == other.extension.name
         }
         return false
     }
 
     override fun hashCode(): Int {
-        return extension.url.hashCode()
+        return extension.name.hashCode()
     }
 
 }

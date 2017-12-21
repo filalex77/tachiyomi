@@ -18,4 +18,13 @@ class ExtensionAdapter(val controller: ExtensionController) :
     init {
         setDisplayHeadersAtStartUp(true)
     }
+
+    /**
+     * Listener for browse item clicks.
+     */
+    val buttonClickListener: ExtensionAdapter.OnButtonClickListener = controller
+
+    interface OnButtonClickListener {
+        fun onButtonClick(position: Int)
+    }
 }
