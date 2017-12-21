@@ -18,6 +18,7 @@ import eu.kanade.tachiyomi.source.online.LoginSource
 import eu.kanade.tachiyomi.ui.base.controller.DialogController
 import eu.kanade.tachiyomi.ui.catalogue.extension.ExtensionRestartDialog
 import eu.kanade.tachiyomi.ui.main.MainActivity
+import eu.kanade.tachiyomi.widget.preference.SourceLoginDialog
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
 import timber.log.Timber
@@ -28,34 +29,63 @@ class SettingsExtensionDetailController(bundle: Bundle? = null) : SettingsContro
 
     private val sourceManager: SourceManager by injectLazy()
 
-    private var ext: SExtension? = null
+    private lateinit var ext: SExtension
 
     constructor(extension: SExtension) : this() {
         this.ext = extension
     }
 
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        preferenceManager.sharedPreferencesName = "source_" + ext.source
+        super.onCreatePreferences(savedInstanceState, rootKey)
+    }
+
+
     override fun setupPreferenceScreen(screen: PreferenceScreen) = with(screen) {
         titleRes = R.string.ext_details
-
+        preferenceCategory {
+            title = ext.name.capitalize() + " " + ext.version
+        }
         preference {
-            titleRes = R.string.ext_unistalled
+            title = "Uninstall"
             onClick {
                 val ctrl = UninstallDialog(ext!!)
                 ctrl.targetController = this@SettingsExtensionDetailController
                 ctrl.showDialog(router)
             }
         }
-
         var source = sourceManager.get(ext!!.source)
-
-        if (source is LoginSource) {
-            Timber.d("Is login source")
-        }
         if (source is SourceWithPreferences) {
-            Timber.d("Is source with preference")
+            source.sharedPreference = preferenceManager.sharedPreferences
+            if (source is LoginSource) {
+                preference {
+                    title = "Login"
+                    onClick {
+                        val dialog = SourceLoginDialog(source)
+                        dialog.targetController = this@SettingsExtensionDetailController
+                        dialog.showDialog(router)
+                    }
+                }
+            }
+            val all = source.sharedPreference.all
+            preferenceCategory {
+                for (c in all) {
+                    when (c.value) {
+                        is String -> {
+                            editTextPreference {
+                                key = c.key
+                                title = c.key
+                                defaultValue = c.value as String
+                            }
+                        }
+                        else -> {
+                            Timber.e("Preference is not a string")
+                        }
+                    }
+                }
+            }
 
         }
-
     }
 
 
@@ -100,11 +130,7 @@ class SettingsExtensionDetailController(bundle: Bundle? = null) : SettingsContro
         Process.killProcess(Process.myPid())
     }
 
-    fun getDelayObserver(delayTime: Long): Observable<Unit> {
-        return Observable.empty<Unit>().delay(delayTime, TimeUnit.SECONDS)
-    }
-
-    fun processObserverWithRestart(observer: Observable<Unit>) {
+    private fun processObserverWithRestart(observer: Observable<Unit>) {
         observer.concatWith(Observable.empty<Unit>().delay(2L, TimeUnit.SECONDS)).observeOn(AndroidSchedulers.mainThread()).doOnCompleted {
             ExtensionRestartDialog(this@SettingsExtensionDetailController).showDialog(router)
         }.doOnError { it -> Timber.e(it) }.subscribe()

@@ -68,7 +68,7 @@ class CataloguePresenter(
         }
         sourceItems.forEach {
             if (it.source is SourceWithPreferences) {
-                it.source.sharedPreference = preferences.context.getSharedPreferences("source_" + it.source.id, MODE_PRIVATE);
+                it.source.sharedPreference = preferences.context.getSharedPreferences("source_" + it.source.id, MODE_PRIVATE)
             }
         }
         sourceSubscription = Observable.just(sourceItems)

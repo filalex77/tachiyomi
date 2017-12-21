@@ -152,7 +152,7 @@
     <string name="ext_update">Update</string>
     <string name="ext_install">Install</string>
     <string name="ext_installed">Installed</string>
-    <string name="ext_unistalled">Uninstall</string>
+    <string name="ext_uninstalled">Uninstall</string>
     <string name="ext_available">Available</string>
     <string name="ext_download_dialog">Download extension?</string>
     <string name="ext_download_dialog_positive">Download</string>

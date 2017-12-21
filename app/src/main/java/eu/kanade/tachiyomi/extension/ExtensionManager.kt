@@ -49,7 +49,6 @@ open class ExtensionManager(
             //add any extension that is not found on server that was side loaded
             return preMergedObs.doOnNext { it -> addInstalledExtension(it) }
         }
-        extensionsInstalled.clear()
         populateInstalledExtensions()
         return Observable.just(getExtensionCache())
     }
@@ -60,6 +59,7 @@ open class ExtensionManager(
             if (!it.contains(sExtension)) {
                 sExtension.upToDate = true
                 it.add(sExtension)
+                extensionMap.put(sExtension.name, sExtension)
             }
         }
 
