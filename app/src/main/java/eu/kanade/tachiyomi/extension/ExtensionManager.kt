@@ -8,7 +8,6 @@ import eu.kanade.tachiyomi.extension.online.ExtensionParser
 import eu.kanade.tachiyomi.extension.online.FDroidParser
 import eu.kanade.tachiyomi.source.Source
 import rx.Observable
-import timber.log.Timber
 
 /**Manages Extensions installed as well as extensions from Repos
  * Created on 11/30/2017.
@@ -57,13 +56,8 @@ open class ExtensionManager(
 
     private fun addInstalledExtension(it: MutableList<SExtension>) {
         val values = extensionsInstalled.values
-        it.forEach {
-            Timber.d("extensions %s %s", it.name, it.version)
-        }
         for (sExtension in values) {
-            Timber.d("extension compare , %s %s", sExtension.name, it.contains(sExtension))
             if (!it.contains(sExtension)) {
-                Timber.d("extension not on server , %s %s", sExtension.name, sExtension.version)
                 sExtension.upToDate = true
                 it.add(sExtension)
             }
@@ -132,7 +126,9 @@ open class ExtensionManager(
         if (installedExt != null) {
             extension.installed = true
             extension.upToDate = extension.version == installedExt.version
-            extension.version = installedExt.version + " -> " + extension.version
+            if (!extension.upToDate) {
+                extension.version = installedExt.version + " -> " + extension.version
+            }
             extension.packageName = installedExt.packageName
             extension.source = installedExt.source
         } else {
