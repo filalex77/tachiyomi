@@ -16,7 +16,7 @@ class ExtensionDownloadDialog<T>(bundle: Bundle? = null) : DialogController(bund
 
     private var extension: SExtension? = null
 
-    constructor(target: T,extension: SExtension) : this() {
+    constructor(target: T, extension: SExtension) : this() {
         targetController = target
         this.extension = extension
     }

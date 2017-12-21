@@ -125,7 +125,7 @@ open class ExtensionController :
             //launch details page
             router.pushController(SettingsExtensionDetailController(item!!.extension).withFadeTransaction())
 
-        }else{
+        } else {
             val dialog = ExtensionDownloadDialog(this, item.extension)
             dialog.showDialog(router)
         }
@@ -133,8 +133,7 @@ open class ExtensionController :
     }
 
 
-
-        /**
+    /**
      * Called to update adapter containing sources.
      */
     fun setExtensions(extensions: List<IFlexible<*>>) {

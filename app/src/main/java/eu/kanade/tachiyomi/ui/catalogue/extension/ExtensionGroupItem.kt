@@ -10,7 +10,7 @@ import eu.kanade.tachiyomi.R
  *
  * @param code The lang code.
  */
-data class ExtensionGroupItem(val installed: Boolean, val size : Int) : AbstractHeaderItem<ExtensionGroupHolder>() {
+data class ExtensionGroupItem(val installed: Boolean, val size: Int) : AbstractHeaderItem<ExtensionGroupHolder>() {
 
     /**
      * Returns the layout resource of this item.
