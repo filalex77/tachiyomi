@@ -1,11 +1,11 @@
-package eu.kanade.tachiyomi.ui.catalogue.extension
+package eu.kanade.tachiyomi.ui.extension
 
 import android.view.View
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.items.AbstractSectionableItem
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.extension.model.SExtension
 import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.extension.model.Extension
 
 /**
  * Item that contains source information.
@@ -13,7 +13,7 @@ import eu.kanade.tachiyomi.source.CatalogueSource
  * @param source Instance of [CatalogueSource] containing source information.
  * @param header The header for this item.
  */
-data class ExtensionItem(val extension: SExtension, val header: ExtensionGroupItem? = null) :
+data class ExtensionItem(val extension: Extension, val header: ExtensionGroupItem? = null) :
         AbstractSectionableItem<ExtensionHolder, ExtensionGroupItem>(header) {
 
     /**
@@ -41,14 +41,12 @@ data class ExtensionItem(val extension: SExtension, val header: ExtensionGroupIt
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other is ExtensionItem) {
-            return extension.name == other.extension.name
-        }
-        return false
+        if (javaClass != other?.javaClass) return false
+        return extension.pkgName == (other as ExtensionItem).extension.pkgName
     }
 
     override fun hashCode(): Int {
-        return extension.name.hashCode()
+        return extension.pkgName.hashCode()
     }
 
 }

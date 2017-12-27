@@ -17,7 +17,7 @@ import eu.kanade.tachiyomi.source.online.LoginSource
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
 import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
 import eu.kanade.tachiyomi.ui.catalogue.browse.BrowseCatalogueController
-import eu.kanade.tachiyomi.ui.catalogue.extension.ExtensionController
+import eu.kanade.tachiyomi.ui.extension.ExtensionController
 import eu.kanade.tachiyomi.ui.catalogue.global_search.CatalogueSearchController
 import eu.kanade.tachiyomi.ui.catalogue.latest.LatestUpdatesController
 import eu.kanade.tachiyomi.ui.setting.SettingsSourcesController

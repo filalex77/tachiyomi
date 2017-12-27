@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.ui.catalogue.extension
+package eu.kanade.tachiyomi.ui.extension
 
 import android.view.View
 import eu.davidea.flexibleadapter.FlexibleAdapter
@@ -33,6 +33,18 @@ data class ExtensionGroupItem(val installed: Boolean, val size: Int) : AbstractH
                                 position: Int, payloads: List<Any?>?) {
 
         holder.bind(this)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other is ExtensionGroupItem) {
+            return installed == other.installed
+        }
+        return false
+    }
+
+    override fun hashCode(): Int {
+        return installed.hashCode()
     }
 
 }

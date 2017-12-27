@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.ui.catalogue.extension
+package eu.kanade.tachiyomi.ui.extension
 
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.items.IFlexible

@@ -1,15 +1,15 @@
-package eu.kanade.tachiyomi.ui.catalogue.extension
+package eu.kanade.tachiyomi.ui.extension
 
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.ui.base.holder.BaseFlexibleViewHolder
 import eu.kanade.tachiyomi.util.dpToPx
 import eu.kanade.tachiyomi.util.getRound
 import io.github.mthli.slice.Slice
 import kotlinx.android.synthetic.main.extension_controller_card_item.*
-import java.util.*
 
 class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewHolder(view, adapter) {
 
@@ -21,7 +21,6 @@ class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewH
         ext_button.setOnClickListener {
             adapter.buttonClickListener.onButtonClick(adapterPosition)
         }
-
     }
 
     fun bind(item: ExtensionItem) {
@@ -30,28 +29,27 @@ class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewH
 
         // Set source name
         ext_title.text = extension.name
-        version.text = extension.version
-        lang.text = when {
-            extension.lang == "" -> itemView.context.getString(R.string.other_source)
-            extension.lang == "all" -> itemView.context.getString(R.string.all_lang)
-            else -> {
-                val locale = Locale(extension.lang)
-                locale.getDisplayName(locale).capitalize()
-            }
-        }
+        version.text = extension.versionName
+//        lang.text = when {
+//            extension.lang == "" -> itemView.context.getString(R.string.other_source)
+//            extension.lang == "all" -> itemView.context.getString(R.string.all_lang)
+//            else -> {
+//                val locale = Locale(extension.lang)
+//                locale.getDisplayName(locale).capitalize()
+//            }
+//        }
+        lang.text = "TODO"
         itemView.post {
             image.setImageDrawable(image.getRound(extension.name.take(1).toUpperCase(), false))
         }
-        if (!extension.installed) {
-            ext_button.text = itemView.context.getString(R.string.ext_install)
-        } else {
-            if (extension.upToDate) {
-                ext_button.text = itemView.context.getString(R.string.ext_details)
-
+        if (extension is Extension.Installed) {
+            if (extension.hasUpdate) {
+                ext_button.setText(R.string.ext_update)
             } else {
-                ext_button.text = itemView.context.getString(R.string.ext_update)
-
+                ext_button.setText(R.string.ext_details)
             }
+        } else {
+            ext_button.setText(R.string.ext_install)
         }
     }
 
@@ -69,13 +67,13 @@ class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewH
         }
 
         when {
-        // Only one item in the card
+            // Only one item in the card
             count == 1 -> applySlice(2f, false, false, true, true)
-        // First item of the card
+            // First item of the card
             position == 0 -> applySlice(2f, false, true, true, false)
-        // Last item of the card
+            // Last item of the card
             position == count - 1 -> applySlice(2f, true, false, false, true)
-        // Middle item
+            // Middle item
             else -> applySlice(0f, false, false, false, false)
         }
     }
