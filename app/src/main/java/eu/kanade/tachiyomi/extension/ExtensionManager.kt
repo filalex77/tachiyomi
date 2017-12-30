@@ -4,18 +4,18 @@ import android.content.Context
 import com.jakewharton.rxrelay.BehaviorRelay
 import eu.kanade.tachiyomi.extension.api.FDroidApi
 import eu.kanade.tachiyomi.extension.model.Extension
+import eu.kanade.tachiyomi.extension.model.InstallStep
 import eu.kanade.tachiyomi.source.SourceManager
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
-import timber.log.Timber
 
 
 class ExtensionManager(private val context: Context) {
 
     private val api = FDroidApi()
 
-    private val installer = ExtensionInstaller(context)
+    private val installer by lazy { ExtensionInstaller(context) }
 
     private val installedExtensionsRelay = BehaviorRelay.create<List<Extension.Installed>>()
 
@@ -88,27 +88,18 @@ class ExtensionManager(private val context: Context) {
                 }
     }
 
-    fun installExtension(extension: Extension.Available) {
-        api.downloadExtension(extension)
-                .map {
-                    val stream = it.body()?.source()
-                    if (stream != null) {
-                        installer.installFromStream(stream, extension.apkName)
-                    }
-                }
-                .doOnError { Timber.e(it) }
-                .onErrorResumeNext(Observable.empty())
-                .subscribeOn(Schedulers.io())
-                .subscribe()
+    fun installExtension(extension: Extension.Available): Observable<InstallStep> {
+        return installer.downloadAndInstall(api.getApkUrl(extension), extension)
     }
 
-    fun updateExtension(extension: Extension.Installed) {
-        val availableExt = availableExtensions.find { it.pkgName == extension.pkgName } ?: return
-        installExtension(availableExt)
+    fun updateExtension(extension: Extension.Installed): Observable<InstallStep>  {
+        val availableExt = availableExtensions.find { it.pkgName == extension.pkgName }
+                ?: return Observable.empty()
+        return installExtension(availableExt)
     }
 
     fun uninstallExtension(extension: Extension.Installed) {
-        installer.uninstall(extension.pkgName)
+        installer.uninstallApk(extension.pkgName)
     }
 
     private inner class InstallationListener : ExtensionInstallReceiver.Listener {
@@ -117,6 +108,7 @@ class ExtensionManager(private val context: Context) {
             val newExtension = extension.withUpdateCheck()
             installedExtensions += newExtension
             newExtension.sources.forEach { sourceManager.registerSource(it) }
+            installer.completeDownload(extension.pkgName)
         }
 
         override fun onExtensionUpdated(extension: Extension.Installed) {
@@ -129,9 +121,10 @@ class ExtensionManager(private val context: Context) {
             mutInstalledExtensions += newExtension
             installedExtensions = mutInstalledExtensions
             newExtension.sources.forEach { sourceManager.registerSource(it, true) }
+            installer.completeDownload(extension.pkgName)
         }
 
-        override fun onExtensionUninstalled(pkgName: String) {
+        override fun onPackageUninstalled(pkgName: String) {
             val removedExtension = installedExtensions.find { it.pkgName == pkgName }
             if (removedExtension != null) {
                 installedExtensions -= removedExtension

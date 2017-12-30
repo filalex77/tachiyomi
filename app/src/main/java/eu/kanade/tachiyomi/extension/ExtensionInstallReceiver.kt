@@ -17,8 +17,8 @@ internal class ExtensionInstallReceiver(private val listener: ExtensionInstallRe
 
     private val filter get() = IntentFilter().apply {
         addAction(Intent.ACTION_PACKAGE_ADDED)
-        addAction(Intent.ACTION_PACKAGE_REMOVED)
         addAction(Intent.ACTION_PACKAGE_REPLACED)
+        addAction(Intent.ACTION_PACKAGE_REMOVED)
         addDataScheme("package")
     }
 
@@ -34,19 +34,19 @@ internal class ExtensionInstallReceiver(private val listener: ExtensionInstallRe
                     }
                 }
             }
-            Intent.ACTION_PACKAGE_REMOVED -> {
-                if (!isReplacing(intent)) {
-                    val pkgName = getPackageNameFromIntent(intent)
-                    if (pkgName != null) {
-                        listener.onExtensionUninstalled(pkgName)
-                    }
-                }
-            }
             Intent.ACTION_PACKAGE_REPLACED -> {
                 launchNow {
                     val extension = getExtensionFromIntent(context, intent)
                     if (extension != null) {
                         listener.onExtensionUpdated(extension)
+                    }
+                }
+            }
+            Intent.ACTION_PACKAGE_REMOVED -> {
+                if (!isReplacing(intent)) {
+                    val pkgName = getPackageNameFromIntent(intent)
+                    if (pkgName != null) {
+                        listener.onPackageUninstalled(pkgName)
                     }
                 }
             }
@@ -69,7 +69,7 @@ internal class ExtensionInstallReceiver(private val listener: ExtensionInstallRe
     interface Listener {
         fun onExtensionInstalled(extension: Extension.Installed)
         fun onExtensionUpdated(extension: Extension.Installed)
-        fun onExtensionUninstalled(pkgName: String)
+        fun onPackageUninstalled(pkgName: String)
     }
 
 }

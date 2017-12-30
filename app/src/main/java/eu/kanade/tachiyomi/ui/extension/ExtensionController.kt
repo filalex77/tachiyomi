@@ -144,5 +144,9 @@ open class ExtensionController : NucleusController<ExtensionPresenter>(),
 
     }
 
+    fun downloadUpdate(item: ExtensionItem) {
+        adapter?.updateItem(item, item.installStep)
+    }
+
 }
 

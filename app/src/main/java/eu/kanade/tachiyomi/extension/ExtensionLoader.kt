@@ -5,6 +5,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import dalvik.system.PathClassLoader
 import eu.kanade.tachiyomi.extension.model.Extension
+import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceFactory
 import kotlinx.coroutines.experimental.async
@@ -25,7 +26,7 @@ internal object ExtensionLoader {
 
         if (extPkgs.isEmpty()) return emptyList()
 
-        // Load each extension in background and wait for completion
+        // Load each extension concurrently and wait for completion
         return runBlocking {
             val deferred = extPkgs.map {
                 async { loadExtension(context, it.packageName, it) }
@@ -84,15 +85,21 @@ internal object ExtensionLoader {
                         return null
                     }
                 }
+        val langs = sources.filterIsInstance<CatalogueSource>()
+                .map { it.lang }
+                .toSet()
 
-        return Extension.Installed(extName, pkgName, versionName, versionCode, sources)
+        val lang = when (langs.size) {
+            0 -> ""
+            1 -> langs.first()
+            else -> "all"
+        }
+
+        return Extension.Installed(extName, pkgName, versionName, versionCode, sources, lang)
     }
 
     private fun isPackageAnExtension(pkgInfo: PackageInfo): Boolean {
-        if (pkgInfo.reqFeatures.orEmpty().none { it.name == EXTENSION_FEATURE }) {
-            return false
-        }
-        return true
+        return pkgInfo.reqFeatures.orEmpty().any { it.name == EXTENSION_FEATURE }
     }
 
 }

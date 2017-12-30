@@ -16,7 +16,7 @@ data class ExtensionGroupItem(val installed: Boolean, val size: Int) : AbstractH
      * Returns the layout resource of this item.
      */
     override fun getLayoutRes(): Int {
-        return R.layout.extension_controller_card
+        return R.layout.extension_card_header
     }
 
     /**

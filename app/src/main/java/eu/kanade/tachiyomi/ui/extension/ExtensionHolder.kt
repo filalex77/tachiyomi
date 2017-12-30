@@ -5,13 +5,16 @@ import android.view.View
 import android.view.ViewGroup
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.extension.model.Extension
+import eu.kanade.tachiyomi.extension.model.InstallStep
 import eu.kanade.tachiyomi.ui.base.holder.BaseFlexibleViewHolder
 import eu.kanade.tachiyomi.util.dpToPx
 import eu.kanade.tachiyomi.util.getRound
 import io.github.mthli.slice.Slice
-import kotlinx.android.synthetic.main.extension_controller_card_item.*
+import kotlinx.android.synthetic.main.extension_card_item.*
+import java.util.*
 
-class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewHolder(view, adapter) {
+class ExtensionHolder(view: View, private val adapter: ExtensionAdapter) :
+        BaseFlexibleViewHolder(view, adapter) {
 
     private val slice = Slice(card).apply {
         setColor(adapter.cardBackground)
@@ -30,26 +33,47 @@ class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewH
         // Set source name
         ext_title.text = extension.name
         version.text = extension.versionName
-//        lang.text = when {
-//            extension.lang == "" -> itemView.context.getString(R.string.other_source)
-//            extension.lang == "all" -> itemView.context.getString(R.string.all_lang)
-//            else -> {
-//                val locale = Locale(extension.lang)
-//                locale.getDisplayName(locale).capitalize()
-//            }
-//        }
-        lang.text = "TODO"
+        lang.text = when {
+            extension.lang == "" -> itemView.context.getString(R.string.other_source)
+            extension.lang == "all" -> itemView.context.getString(R.string.all_lang)
+            else -> {
+                val locale = Locale(extension.lang)
+                locale.getDisplayName(locale).capitalize()
+            }
+        }
         itemView.post {
             image.setImageDrawable(image.getRound(extension.name.take(1).toUpperCase(), false))
         }
-        if (extension is Extension.Installed) {
-            if (extension.hasUpdate) {
-                ext_button.setText(R.string.ext_update)
+        bindButton(item)
+    }
+
+    fun bindButton(item: ExtensionItem) = with(ext_button) {
+        isEnabled = true
+        isClickable = true
+        isActivated = false
+
+        val installStep = item.installStep
+        if (installStep != null) {
+            setText(when (installStep) {
+                InstallStep.Pending -> R.string.ext_pending
+                InstallStep.Downloading -> R.string.ext_downloading
+                InstallStep.Installing -> R.string.ext_installing
+                InstallStep.Installed -> R.string.ext_installed
+                InstallStep.Error -> R.string.action_retry
+            })
+            if (installStep != InstallStep.Error) {
+                isEnabled = false
+                isClickable = false
+            }
+        } else if (item.extension is Extension.Installed) {
+            if (item.extension.hasUpdate) {
+                isActivated = true
+                setText(R.string.ext_update)
             } else {
-                ext_button.setText(R.string.ext_details)
+                setText(R.string.ext_details)
             }
         } else {
-            ext_button.setText(R.string.ext_install)
+            setText(R.string.ext_install)
         }
     }
 
@@ -61,7 +85,7 @@ class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewH
         var count = 1
 
         if (item.header != null) {
-            val sectionItems = mAdapter.getSectionItems(item.header)
+            val sectionItems = adapter.getSectionItems(item.header)
             position = sectionItems.indexOf(item)
             count = sectionItems.size
         }
@@ -104,4 +128,5 @@ class ExtensionHolder(view: View, adapter: ExtensionAdapter) : BaseFlexibleViewH
     companion object {
         val margin = 8.dpToPx
     }
+
 }

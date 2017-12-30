@@ -13,7 +13,7 @@ class FDroidApi {
 
     private val network: NetworkHelper by injectLazy()
 
-    private val client = network.client
+    private val client get() = network.client
 
     private val baseUrl = "https://fdroid.j2ghz.com/repo"
 
@@ -34,14 +34,13 @@ class FDroidApi {
             val versionName = recentPackage.select("version").text()
             val versionCode = recentPackage.select("versioncode").text().toInt()
             val apkName = recentPackage.select("apkname").text()
+            val lang = pkgName.substringAfter(".extension.").substringBefore(".")
 
-            Extension.Available(name, pkgName, versionName, versionCode, apkName)
+            Extension.Available(name, pkgName, versionName, versionCode, lang, apkName)
         }
     }
 
-    fun downloadExtension(extension: Extension.Available): Observable<Response> {
-        val call = GET("$baseUrl/${extension.apkName}")
-
-        return client.newCall(call).asObservableSuccess()
+    fun getApkUrl(extension: Extension.Available): String {
+        return "$baseUrl/${extension.apkName}"
     }
 }

@@ -9,7 +9,7 @@
         android:id="@+id/ext_recycler"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:listitem="@layout/extension_controller_card"/>
+        tools:listitem="@layout/extension_card_header"/>
 
     <ProgressBar
         android:id="@+id/ext_progress"

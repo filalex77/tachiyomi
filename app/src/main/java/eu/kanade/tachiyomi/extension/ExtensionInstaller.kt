@@ -1,40 +1,147 @@
 package eu.kanade.tachiyomi.extension
 
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
-import eu.kanade.tachiyomi.util.getUriCompat
-import eu.kanade.tachiyomi.util.saveTo
-import okio.BufferedSource
-import java.io.File
+import com.jakewharton.rxrelay.PublishRelay
+import eu.kanade.tachiyomi.extension.model.Extension
+import eu.kanade.tachiyomi.extension.model.InstallStep
+import rx.Observable
+import rx.android.schedulers.AndroidSchedulers
+import java.util.concurrent.TimeUnit
 
 internal class ExtensionInstaller(private val context: Context) {
 
-    private val extensionDir = File(context.cacheDir, "extension_cache")
+    private val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
-    init {
-        extensionDir.delete()
-        extensionDir.mkdirs()
-    }
+    private val downloadReceiver = DownloadCompletionReceiver()
 
-    fun installFromStream(source: BufferedSource, apkName: String) {
-        val destination = File(extensionDir, apkName)
-        source.saveTo(destination)
-        installFromFile(destination)
-    }
+    private val requestedDownloads = hashMapOf<String, Long>()
 
-    private fun installFromFile(file: File) {
-        val uri = file.getUriCompat(context)
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+    private val downloadsRelay = PublishRelay.create<Pair<Long, InstallStep>>()
+
+    fun downloadAndInstall(url: String, extension: Extension) = Observable.defer {
+        val pkgName = extension.pkgName
+
+        val oldDownload = requestedDownloads[pkgName]
+        if (oldDownload != null) {
+            deleteDownload(pkgName)
         }
+
+        downloadReceiver.register()
+
+        val request = DownloadManager.Request(Uri.parse(url))
+                .setTitle(extension.name)
+                .setMimeType(APK_MIME)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+
+        val id = downloadManager.enqueue(request)
+        requestedDownloads.put(pkgName, id)
+
+        downloadsRelay.filter { it.first == id }
+                .map { it.second }
+                // Poll download status
+                .mergeWith(pollStatus(id))
+                // Stop when the download completes or errors
+                .takeUntil { it.isCompleted() }
+                // Always remove the download when unsubscribed
+                .doOnUnsubscribe { deleteDownload(pkgName) }
+    }
+
+    private fun pollStatus(id: Long): Observable<InstallStep> {
+        val query = DownloadManager.Query().setFilterById(id)
+
+        return Observable.interval(0, 1, TimeUnit.SECONDS)
+                // Get the current download status
+                .map {
+                    downloadManager.query(query).use { cursor ->
+                        cursor.moveToFirst()
+                        cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
+                    }
+                }
+                // Ignore duplicate results
+                .distinctUntilChanged()
+                // Map to our model
+                .map { status ->
+                    when (status) {
+                        DownloadManager.STATUS_PENDING -> InstallStep.Pending
+                        DownloadManager.STATUS_RUNNING -> InstallStep.Downloading
+                        DownloadManager.STATUS_SUCCESSFUL -> InstallStep.Installing
+                        DownloadManager.STATUS_FAILED -> InstallStep.Error
+                        else -> InstallStep.Pending
+                    }
+                }
+                // Force an error if the download takes more than 3 minutes
+                .mergeWith(Observable.timer(3, TimeUnit.MINUTES).map { InstallStep.Error })
+                .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    fun completeDownload(pkgName: String) {
+        val id = requestedDownloads[pkgName] ?: return
+        downloadsRelay.call(id to InstallStep.Installed)
+    }
+
+    fun installApk(uri: Uri) {
+        val intent = Intent(Intent.ACTION_VIEW)
+                .setDataAndType(uri, APK_MIME)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
         context.startActivity(intent)
     }
 
-    fun uninstall(pkgName: String) {
+    fun uninstallApk(pkgName: String) {
         val packageUri = Uri.parse("package:$pkgName")
         val uninstallIntent = Intent(Intent.ACTION_UNINSTALL_PACKAGE, packageUri)
         context.startActivity(uninstallIntent)
     }
+
+    fun deleteDownload(pkgName: String) {
+        val downloadId = requestedDownloads.remove(pkgName)
+        if (downloadId != null) {
+            downloadManager.remove(downloadId)
+        }
+        if (requestedDownloads.isEmpty()) {
+            downloadReceiver.unregister()
+        }
+    }
+
+    private inner class DownloadCompletionReceiver : BroadcastReceiver() {
+
+        private var isRegistered = false
+
+        fun register() {
+            if (isRegistered) return
+            isRegistered = true
+
+            val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
+            context.registerReceiver(this, filter)
+        }
+
+        fun unregister() {
+            if (!isRegistered) return
+            isRegistered = false
+
+            context.unregisterReceiver(this)
+        }
+
+        override fun onReceive(context: Context, intent: Intent?) {
+            val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, 0) ?: return
+
+            val uri = downloadManager.getUriForDownloadedFile(id)
+            if (uri != null) {
+                downloadsRelay.call(id to InstallStep.Installing)
+                installApk(uri)
+            } else {
+                downloadsRelay.call(id to InstallStep.Error)
+            }
+        }
+    }
+
+    private companion object {
+        const val APK_MIME = "application/vnd.android.package-archive"
+    }
+
 }

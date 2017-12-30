@@ -4,8 +4,9 @@ import android.view.View
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.items.AbstractSectionableItem
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.extension.model.Extension
+import eu.kanade.tachiyomi.extension.model.InstallStep
+import eu.kanade.tachiyomi.source.CatalogueSource
 
 /**
  * Item that contains source information.
@@ -13,14 +14,16 @@ import eu.kanade.tachiyomi.extension.model.Extension
  * @param source Instance of [CatalogueSource] containing source information.
  * @param header The header for this item.
  */
-data class ExtensionItem(val extension: Extension, val header: ExtensionGroupItem? = null) :
+data class ExtensionItem(val extension: Extension,
+                         val header: ExtensionGroupItem? = null,
+                         val installStep: InstallStep? = null) :
         AbstractSectionableItem<ExtensionHolder, ExtensionGroupItem>(header) {
 
     /**
      * Returns the layout resource of this item.
      */
     override fun getLayoutRes(): Int {
-        return R.layout.extension_controller_card_item
+        return R.layout.extension_card_item
     }
 
     /**
@@ -36,7 +39,11 @@ data class ExtensionItem(val extension: Extension, val header: ExtensionGroupIte
     override fun bindViewHolder(adapter: FlexibleAdapter<*>, holder: ExtensionHolder,
                                 position: Int, payloads: List<Any?>?) {
 
-        holder.bind(this)
+        if (payloads == null || payloads.isEmpty()) {
+            holder.bind(this)
+        } else {
+            holder.bindButton(this)
+        }
     }
 
     override fun equals(other: Any?): Boolean {

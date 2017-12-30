@@ -8,17 +8,20 @@ sealed class Extension {
     abstract val pkgName: String
     abstract val versionName: String
     abstract val versionCode: Int
+    abstract val lang: String
 
     data class Installed(override val name: String,
                          override val pkgName: String,
                          override val versionName: String,
                          override val versionCode: Int,
                          val sources: List<Source>,
+                         override val lang: String,
                          val hasUpdate: Boolean = false) : Extension()
 
     data class Available(override val name: String,
                          override val pkgName: String,
                          override val versionName: String,
                          override val versionCode: Int,
+                         override val lang: String,
                          val apkName: String) : Extension()
 }

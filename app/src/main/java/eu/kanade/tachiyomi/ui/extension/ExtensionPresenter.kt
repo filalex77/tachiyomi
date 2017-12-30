@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.ui.extension
 import android.os.Bundle
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.extension.model.Extension
+import eu.kanade.tachiyomi.extension.model.InstallStep
 import eu.kanade.tachiyomi.ui.base.presenter.BasePresenter
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
@@ -18,15 +19,18 @@ open class ExtensionPresenter(
         private val extensionManager: ExtensionManager = Injekt.get()
 ) : BasePresenter<ExtensionController>() {
 
+    private var extensions = emptyList<ExtensionItem>()
+
+    private var currentDownloads = hashMapOf<String, InstallStep>()
+
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
         getExtensionsObservable()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribeLatestCache({ view, extensions ->
-                    view.setExtensions(extensions)
-                })
+                .doOnNext { extensions = it }
+                .subscribeLatestCache({ view, _ -> view.setExtensions(extensions) })
     }
 
 
@@ -50,13 +54,13 @@ open class ExtensionPresenter(
             if (installedSorted.isNotEmpty()) {
                 val header = ExtensionGroupItem(true, installedSorted.size)
                 items += installedSorted.map { extension ->
-                    ExtensionItem(extension, header)
+                    ExtensionItem(extension, header, currentDownloads[extension.pkgName])
                 }
             }
             if (availableSorted.isNotEmpty()) {
                 val header = ExtensionGroupItem(false, availableSorted.size)
                 items += availableSorted.map { extension ->
-                    ExtensionItem(extension, header)
+                    ExtensionItem(extension, header, currentDownloads[extension.pkgName])
                 }
             }
 
@@ -66,6 +70,27 @@ open class ExtensionPresenter(
 
     fun installExtension(extension: Extension.Available) {
         extensionManager.installExtension(extension)
+                .doOnNext { currentDownloads.put(extension.pkgName, it) }
+                .doOnUnsubscribe { currentDownloads.remove(extension.pkgName) }
+                .map { state ->
+                    val extensions = extensions.toMutableList()
+                    val position = extensions.indexOfFirst { it.extension.pkgName == extension.pkgName }
+
+                    if (position != -1) {
+                        val item = extensions[position].copy(installStep = state)
+                        extensions[position] = item
+
+                        this.extensions = extensions
+                        item
+                    } else {
+                        null
+                    }
+                }
+                .subscribeWithView({ view, item ->
+                    if (item != null) {
+                        view.downloadUpdate(item)
+                    }
+                })
     }
 
     fun updateExtension(extension: Extension.Installed) {
