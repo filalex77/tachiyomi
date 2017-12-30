@@ -45,8 +45,12 @@ internal class ExtensionInstaller(private val context: Context) {
                 .map { it.second }
                 // Poll download status
                 .mergeWith(pollStatus(id))
-                // Stop when the download completes or errors
+                // Force an error if the download takes more than 3 minutes
+                .mergeWith(Observable.timer(3, TimeUnit.MINUTES).map { InstallStep.Error })
+                // Stop when the application is installed or errors
                 .takeUntil { it.isCompleted() }
+                // Always notify on main thread
+                .observeOn(AndroidSchedulers.mainThread())
                 // Always remove the download when unsubscribed
                 .doOnUnsubscribe { deleteDownload(pkgName) }
     }
@@ -64,19 +68,16 @@ internal class ExtensionInstaller(private val context: Context) {
                 }
                 // Ignore duplicate results
                 .distinctUntilChanged()
+                // Stop polling when the download fails or finishes
+                .takeUntil { it == DownloadManager.STATUS_SUCCESSFUL || it == DownloadManager.STATUS_FAILED }
                 // Map to our model
-                .map { status ->
+                .flatMap { status ->
                     when (status) {
-                        DownloadManager.STATUS_PENDING -> InstallStep.Pending
-                        DownloadManager.STATUS_RUNNING -> InstallStep.Downloading
-                        DownloadManager.STATUS_SUCCESSFUL -> InstallStep.Installing
-                        DownloadManager.STATUS_FAILED -> InstallStep.Error
-                        else -> InstallStep.Pending
+                        DownloadManager.STATUS_PENDING -> Observable.just(InstallStep.Pending)
+                        DownloadManager.STATUS_RUNNING -> Observable.just(InstallStep.Downloading)
+                        else -> Observable.empty()
                     }
                 }
-                // Force an error if the download takes more than 3 minutes
-                .mergeWith(Observable.timer(3, TimeUnit.MINUTES).map { InstallStep.Error })
-                .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun completeDownload(pkgName: String) {
