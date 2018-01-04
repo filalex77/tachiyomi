@@ -5,6 +5,9 @@ import com.jakewharton.rxrelay.BehaviorRelay
 import eu.kanade.tachiyomi.extension.api.FDroidApi
 import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.extension.model.InstallStep
+import eu.kanade.tachiyomi.extension.util.ExtensionInstallReceiver
+import eu.kanade.tachiyomi.extension.util.ExtensionInstaller
+import eu.kanade.tachiyomi.extension.util.ExtensionLoader
 import eu.kanade.tachiyomi.source.SourceManager
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
@@ -83,9 +86,7 @@ class ExtensionManager(private val context: Context) {
                 .onErrorReturn { emptyList() }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    availableExtensions = it
-                }
+                .subscribe { availableExtensions = it }
     }
 
     fun installExtension(extension: Extension.Available): Observable<InstallStep> {
@@ -108,7 +109,7 @@ class ExtensionManager(private val context: Context) {
             val newExtension = extension.withUpdateCheck()
             installedExtensions += newExtension
             newExtension.sources.forEach { sourceManager.registerSource(it) }
-            installer.completeDownload(extension.pkgName)
+            installer.onApkInstalled(extension.pkgName)
         }
 
         override fun onExtensionUpdated(extension: Extension.Installed) {
@@ -121,7 +122,7 @@ class ExtensionManager(private val context: Context) {
             mutInstalledExtensions += newExtension
             installedExtensions = mutInstalledExtensions
             newExtension.sources.forEach { sourceManager.registerSource(it, true) }
-            installer.completeDownload(extension.pkgName)
+            installer.onApkInstalled(extension.pkgName)
         }
 
         override fun onPackageUninstalled(pkgName: String) {

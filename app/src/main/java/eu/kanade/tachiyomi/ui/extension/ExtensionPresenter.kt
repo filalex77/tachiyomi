@@ -101,4 +101,8 @@ open class ExtensionPresenter(
         extensionManager.uninstallExtension(extension)
     }
 
+    fun findAvailableExtensions() {
+        extensionManager.findAvailableExtensions()
+    }
+
 }

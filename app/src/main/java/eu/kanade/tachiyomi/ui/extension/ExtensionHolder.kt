@@ -11,7 +11,6 @@ import eu.kanade.tachiyomi.util.dpToPx
 import eu.kanade.tachiyomi.util.getRound
 import io.github.mthli.slice.Slice
 import kotlinx.android.synthetic.main.extension_card_item.*
-import java.util.*
 
 class ExtensionHolder(view: View, private val adapter: ExtensionAdapter) :
         BaseFlexibleViewHolder(view, adapter) {
@@ -33,14 +32,7 @@ class ExtensionHolder(view: View, private val adapter: ExtensionAdapter) :
         // Set source name
         ext_title.text = extension.name
         version.text = extension.versionName
-        lang.text = when {
-            extension.lang == "" -> itemView.context.getString(R.string.other_source)
-            extension.lang == "all" -> itemView.context.getString(R.string.all_lang)
-            else -> {
-                val locale = Locale(extension.lang)
-                locale.getDisplayName(locale).capitalize()
-            }
-        }
+        lang.text = extension.getLocalizedLang(itemView.context)
         itemView.post {
             image.setImageDrawable(image.getRound(extension.name.take(1).toUpperCase(), false))
         }

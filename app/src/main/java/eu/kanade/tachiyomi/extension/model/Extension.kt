@@ -24,4 +24,5 @@ sealed class Extension {
                          override val versionCode: Int,
                          override val lang: String,
                          val apkName: String) : Extension()
+
 }

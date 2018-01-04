@@ -1,10 +1,10 @@
 package eu.kanade.tachiyomi.source.online
 
+import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.SourceWithPreferences
 import rx.Observable
 
-interface LoginSource : Source, SourceWithPreferences {
+interface LoginSource : Source, ConfigurableSource {
 
     fun isLogged(): Boolean
 

@@ -12,14 +12,13 @@ import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.SourceManager
 import kotlinx.coroutines.experimental.async
-import uy.kohesive.injekt.api.InjektModule
-import uy.kohesive.injekt.api.InjektRegistrar
-import uy.kohesive.injekt.api.addSingletonFactory
-import uy.kohesive.injekt.api.get
+import uy.kohesive.injekt.api.*
 
 class AppModule(val app: Application) : InjektModule {
 
     override fun InjektRegistrar.registerInjectables() {
+
+        addSingleton(app)
 
         addSingletonFactory { PreferencesHelper(app) }
 
@@ -31,7 +30,7 @@ class AppModule(val app: Application) : InjektModule {
 
         addSingletonFactory { NetworkHelper(app) }
 
-        addSingletonFactory { SourceManager(app) }
+        addSingletonFactory { SourceManager(app).also { get<ExtensionManager>().init(it) } }
 
         addSingletonFactory { ExtensionManager(app) }
 
@@ -41,7 +40,7 @@ class AppModule(val app: Application) : InjektModule {
 
         addSingletonFactory { Gson() }
 
-        // Init asynchronously expensive components for a faster cold start
+        // Asynchronously init expensive components for a faster cold start
 
         async { get<PreferencesHelper>() }
 

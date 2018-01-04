@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.extension
+package eu.kanade.tachiyomi.extension.util
 
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
@@ -80,11 +80,6 @@ internal class ExtensionInstaller(private val context: Context) {
                 }
     }
 
-    fun completeDownload(pkgName: String) {
-        val id = requestedDownloads[pkgName] ?: return
-        downloadsRelay.call(id to InstallStep.Installed)
-    }
-
     fun installApk(uri: Uri) {
         val intent = Intent(Intent.ACTION_VIEW)
                 .setDataAndType(uri, APK_MIME)
@@ -97,6 +92,11 @@ internal class ExtensionInstaller(private val context: Context) {
         val packageUri = Uri.parse("package:$pkgName")
         val uninstallIntent = Intent(Intent.ACTION_UNINSTALL_PACKAGE, packageUri)
         context.startActivity(uninstallIntent)
+    }
+
+    fun onApkInstalled(pkgName: String) {
+        val id = requestedDownloads[pkgName] ?: return
+        downloadsRelay.call(id to InstallStep.Installed)
     }
 
     fun deleteDownload(pkgName: String) {

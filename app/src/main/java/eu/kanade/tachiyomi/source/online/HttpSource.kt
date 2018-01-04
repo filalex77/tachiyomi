@@ -1,6 +1,8 @@
 package eu.kanade.tachiyomi.source.online
 
-import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import android.app.Application
+import android.content.Context
+import android.content.SharedPreferences
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.asObservableSuccess
@@ -12,6 +14,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import rx.Observable
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
 import java.lang.Exception
 import java.net.URI
@@ -29,9 +33,11 @@ abstract class HttpSource : CatalogueSource {
     protected val network: NetworkHelper by injectLazy()
 
     /**
-     * Preferences helper.
+     * Preferences that a source may need.
      */
-    protected val preferences: PreferencesHelper by injectLazy()
+    val preferences: SharedPreferences by lazy {
+        Injekt.get<Application>().getSharedPreferences("source_$id", Context.MODE_PRIVATE)
+    }
 
     /**
      * Base url of the website without the trailing slash, like: http://mysite.com

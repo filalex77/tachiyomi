@@ -1,17 +1,16 @@
 package eu.kanade.tachiyomi.ui.extension
 
-import android.support.design.widget.Snackbar
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.jakewharton.rxbinding.support.v4.widget.refreshes
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.items.IFlexible
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
-import eu.kanade.tachiyomi.util.gone
-import eu.kanade.tachiyomi.util.visible
+import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
 import kotlinx.android.synthetic.main.extension_controller.*
 
 
@@ -20,17 +19,13 @@ import kotlinx.android.synthetic.main.extension_controller.*
  */
 open class ExtensionController : NucleusController<ExtensionPresenter>(),
         ExtensionAdapter.OnButtonClickListener,
-        FlexibleAdapter.OnItemClickListener {
+        FlexibleAdapter.OnItemClickListener,
+        FlexibleAdapter.OnItemLongClickListener {
 
     /**
      * Adapter containing the list of manga from the catalogue.
      */
     private var adapter: FlexibleAdapter<IFlexible<*>>? = null
-
-    /**
-     * Snackbar containing an error message when a request fails.
-     */
-    private var snack: Snackbar? = null
 
     init {
         setHasOptionsMenu(true)
@@ -51,59 +46,22 @@ open class ExtensionController : NucleusController<ExtensionPresenter>(),
     override fun onViewCreated(view: View) {
         super.onViewCreated(view)
 
+        ext_swipe_refresh.isRefreshing = true
+        ext_swipe_refresh.refreshes().subscribeUntilDestroy {
+            presenter.findAvailableExtensions()
+        }
+
         // Initialize adapter, scroll listener and recycler views
         adapter = ExtensionAdapter(this)
         // Create recycler and set adapter.
         ext_recycler.layoutManager = LinearLayoutManager(view.context)
         ext_recycler.adapter = adapter
         ext_recycler.addItemDecoration(ExtensionDividerItemDecoration(view.context))
-        ext_progress.visible()
     }
 
     override fun onDestroyView(view: View) {
         adapter = null
         super.onDestroyView(view)
-        snack = null
-    }
-
-    /**
-     * Called from the presenter when the network request fails.
-     *
-     * @param error the error received.
-     */
-    fun onError(error: Throwable) {
-//        Timber.e(error)
-//        val adapter = adapter ?: return
-//        adapter.onLoadMoreComplete(null)
-//        hideProgressBar()
-//
-//        val message = view!!.context.getString(R.string.error_with_repository)
-//
-//        snack?.dismiss()
-//        snack = ext_recycler.snack(message, Snackbar.LENGTH_INDEFINITE) {
-//            setAction(R.string.action_retry) {
-//                showProgressBar()
-//                presenter.updateExtensions(true)
-//            }
-//        }
-    }
-
-
-    /**
-     * Shows the progress bar.
-     */
-    private fun showProgressBar() {
-        ext_progress?.visible()
-        snack?.dismiss()
-        snack = null
-    }
-
-
-    /**
-     * Hides active progress bars.
-     */
-    private fun hideProgressBar() {
-        ext_progress?.gone()
     }
 
     override fun onButtonClick(position: Int) {
@@ -112,10 +70,8 @@ open class ExtensionController : NucleusController<ExtensionPresenter>(),
         when (extension) {
             is Extension.Installed -> {
                 if (!extension.hasUpdate) {
-                    //launch details page
-//                router.pushController(SettingsExtensionDetailController(item.extension).withFadeTransaction())
+                    openDetails(extension)
                 } else {
-                    // Update dialog
                     presenter.updateExtension(extension)
                 }
             }
@@ -128,18 +84,29 @@ open class ExtensionController : NucleusController<ExtensionPresenter>(),
     override fun onItemClick(position: Int): Boolean {
         val extension = (adapter?.getItem(position) as? ExtensionItem)?.extension ?: return false
         if (extension is Extension.Installed) {
-            presenter.uninstallExtension(extension)
+            openDetails(extension)
         }
 
         return false
     }
 
+    override fun onItemLongClick(position: Int) {
+        val extension = (adapter?.getItem(position) as? ExtensionItem)?.extension ?: return
+        if (extension is Extension.Installed) {
+            presenter.uninstallExtension(extension)
+        }
+    }
+
+    private fun openDetails(extension: Extension.Installed) {
+        val controller = ExtensionDetailsController(extension.pkgName)
+        router.pushController(controller.withFadeTransaction())
+    }
 
     /**
      * Called to update adapter containing sources.
      */
     fun setExtensions(extensions: List<ExtensionItem>) {
-        hideProgressBar()
+        ext_swipe_refresh?.isRefreshing = false
         adapter?.updateDataSet(extensions)
 
     }

@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.extension
+package eu.kanade.tachiyomi.extension.util
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -8,7 +8,7 @@ import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.util.launchNow
 import kotlinx.coroutines.experimental.async
 
-internal class ExtensionInstallReceiver(private val listener: ExtensionInstallReceiver.Listener) :
+internal class ExtensionInstallReceiver(private val listener: Listener) :
         BroadcastReceiver() {
 
     fun register(context: Context) {
