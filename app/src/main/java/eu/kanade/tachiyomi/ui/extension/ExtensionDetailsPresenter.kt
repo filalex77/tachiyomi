@@ -33,6 +33,6 @@ class ExtensionDetailsPresenter(
     }
 
     fun uninstallExtension() {
-        extensionManager.uninstallExtension(extension)
+        extensionManager.uninstallExtension(extension.pkgName)
     }
 }

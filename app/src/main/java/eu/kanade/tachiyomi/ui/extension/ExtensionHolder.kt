@@ -32,7 +32,11 @@ class ExtensionHolder(view: View, private val adapter: ExtensionAdapter) :
         // Set source name
         ext_title.text = extension.name
         version.text = extension.versionName
-        lang.text = extension.getLocalizedLang(itemView.context)
+        lang.text = if (extension !is Extension.Untrusted) {
+            extension.getLocalizedLang(itemView.context)
+        } else {
+            itemView.context.getString(R.string.ext_untrusted).toUpperCase()
+        }
         itemView.post {
             image.setImageDrawable(image.getRound(extension.name.take(1).toUpperCase(), false))
         }
@@ -43,6 +47,8 @@ class ExtensionHolder(view: View, private val adapter: ExtensionAdapter) :
         isEnabled = true
         isClickable = true
         isActivated = false
+
+        val extension = item.extension
 
         val installStep = item.installStep
         if (installStep != null) {
@@ -57,13 +63,15 @@ class ExtensionHolder(view: View, private val adapter: ExtensionAdapter) :
                 isEnabled = false
                 isClickable = false
             }
-        } else if (item.extension is Extension.Installed) {
-            if (item.extension.hasUpdate) {
+        } else if (extension is Extension.Installed) {
+            if (extension.hasUpdate) {
                 isActivated = true
                 setText(R.string.ext_update)
             } else {
                 setText(R.string.ext_details)
             }
+        } else if (extension is Extension.Untrusted) {
+            setText(R.string.ext_trust)
         } else {
             setText(R.string.ext_install)
         }

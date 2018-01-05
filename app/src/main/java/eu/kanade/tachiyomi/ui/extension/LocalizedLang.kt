@@ -7,6 +7,7 @@ import java.util.*
 
 fun Extension.getLocalizedLang(context: Context): String {
     return when (lang) {
+        null -> ""
         "" -> context.getString(R.string.other_source)
         "all" -> context.getString(R.string.all_lang)
         else -> {

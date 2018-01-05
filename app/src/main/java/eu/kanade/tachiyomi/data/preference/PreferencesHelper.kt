@@ -153,4 +153,6 @@ class PreferencesHelper(val context: Context) {
 
     fun defaultCategory() = prefs.getInt(Keys.defaultCategory, -1)
 
+    fun trustedSignatures() = rxPrefs.getStringSet("trusted_signatures", emptySet())
+
 }

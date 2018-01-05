@@ -155,16 +155,14 @@
     <string name="ext_downloading">Downloading</string>
     <string name="ext_installing">Installing</string>
     <string name="ext_installed">Installed</string>
+    <string name="ext_trust">Trust</string>
+    <string name="ext_untrusted">Untrusted</string>
     <string name="ext_uninstall">Uninstall</string>
     <string name="ext_preferences">Preferences</string>
     <string name="ext_available">Available</string>
-    <string name="ext_download_dialog">Download extension?</string>
-    <string name="ext_download_dialog_positive">Download</string>
-    <string name="ext_uninstall_dialog">Uninstall extension?</string>
-    <string name="ext_uninstall_dialog_positive">Uninstall</string>
-    <string name="ext_restart_dialog_title">Restart app?</string>
-    <string name="ext_restart_dialog_positive">Restart</string>
-    <string name="ext_restart_dialog_content">Please restart Tachiyomi for changes to take effect</string>
+    <string name="untrusted_extension">Untrusted extension</string>
+    <string name="untrusted_extension_message">This extension was signed with an untrusted certificate and it wasn\'t activated.\n\nA malicious extension could read any login credentials stored in Tachiyomi or execute arbitrary code.\n\nBy trusting this certificate you accept these risks.</string>
+
       <!-- Reader section -->
     <string name="pref_fullscreen">Fullscreen</string>
     <string name="pref_lock_orientation">Lock orientation</string>

@@ -35,26 +35,33 @@ open class ExtensionPresenter(
 
 
     private fun getExtensionsObservable(): Observable<List<ExtensionItem>> {
-        val installedObservable = extensionManager.getInstalledExtensionsObservable()
+        val inst = extensionManager.getInstalledExtensionsObservable()
 
-        val availableObservable = extensionManager.getAvailableExtensionsObservable()
+        val avail = extensionManager.getAvailableExtensionsObservable()
                 .startWith(emptyList<Extension.Available>())
 
-        return Observable.combineLatest(installedObservable, availableObservable, { installed, available ->
-            installed to available
-        }).debounce(100, TimeUnit.MILLISECONDS).map { (installed, available) ->
+        val untru = extensionManager.getUntrustedExtensionsObservable()
+
+        return Observable.combineLatest(inst, avail, untru, { installed, available, untrusted ->
+            Triple(installed, available, untrusted)
+        }).debounce(100, TimeUnit.MILLISECONDS).map { (installed, available, untrusted) ->
             val items = mutableListOf<ExtensionItem>()
 
             val installedSorted = installed.sortedWith(compareBy({ !it.hasUpdate }, { it.name }))
+            val untrustedSorted = untrusted.sortedBy { it.name }
             val availableSorted = available
                     // Filter out already installed extensions
-                    .filter { avail -> installed.none { it.pkgName == avail.pkgName } }
+                    .filter { avail -> installed.none { it.pkgName == avail.pkgName }
+                            && untrusted.none { it.pkgName == avail.pkgName } }
                     .sortedBy { it.name }
 
-            if (installedSorted.isNotEmpty()) {
-                val header = ExtensionGroupItem(true, installedSorted.size)
+            if (installedSorted.isNotEmpty() || untrustedSorted.isNotEmpty()) {
+                val header = ExtensionGroupItem(true, installedSorted.size + untrustedSorted.size)
                 items += installedSorted.map { extension ->
                     ExtensionItem(extension, header, currentDownloads[extension.pkgName])
+                }
+                items += untrustedSorted.map { extension ->
+                    ExtensionItem(extension, header)
                 }
             }
             if (availableSorted.isNotEmpty()) {
@@ -97,12 +104,16 @@ open class ExtensionPresenter(
         extensionManager.updateExtension(extension)
     }
 
-    fun uninstallExtension(extension: Extension.Installed) {
-        extensionManager.uninstallExtension(extension)
+    fun uninstallExtension(pkgName: String) {
+        extensionManager.uninstallExtension(pkgName)
     }
 
     fun findAvailableExtensions() {
         extensionManager.findAvailableExtensions()
+    }
+
+    fun trustSignature(signatureHash: String) {
+        extensionManager.trustSignature(signatureHash)
     }
 
 }

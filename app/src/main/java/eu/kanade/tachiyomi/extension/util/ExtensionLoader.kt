@@ -1,27 +1,42 @@
 package eu.kanade.tachiyomi.extension.util
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import dalvik.system.PathClassLoader
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import eu.kanade.tachiyomi.data.preference.getOrDefault
 import eu.kanade.tachiyomi.extension.model.Extension
+import eu.kanade.tachiyomi.extension.model.LoadResult
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceFactory
+import eu.kanade.tachiyomi.util.Hash
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.runBlocking
 import timber.log.Timber
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 
+@SuppressLint("PackageManagerGetSignatures")
 internal object ExtensionLoader {
 
-    const val EXTENSION_FEATURE = "tachiyomi.extension"
-    const val METADATA_SOURCE_CLASS = "tachiyomi.extension.class"
-    const val LIB_VERSION_MIN = 1
-    const val LIB_VERSION_MAX = 1
+    private const val EXTENSION_FEATURE = "tachiyomi.extension"
+    private const val METADATA_SOURCE_CLASS = "tachiyomi.extension.class"
+    private const val LIB_VERSION_MIN = 1
+    private const val LIB_VERSION_MAX = 1
 
-    fun loadExtensions(context: Context): List<Extension.Installed> {
+    private const val PACKAGE_FLAGS = PackageManager.GET_CONFIGURATIONS or PackageManager.GET_SIGNATURES
+
+    var trustedSignatures = mutableSetOf<String>() +
+            Injekt.get<PreferencesHelper>().trustedSignatures().getOrDefault() +
+            // inorichi's key
+            "7ce04da7773d41b489f4693a366c36bcd0a11fc39b547168553c285bd7348e23"
+
+    fun loadExtensions(context: Context): List<LoadResult> {
         val pkgManager = context.packageManager
-        val installedPkgs = pkgManager.getInstalledPackages(PackageManager.GET_CONFIGURATIONS)
+        val installedPkgs = pkgManager.getInstalledPackages(PACKAGE_FLAGS)
         val extPkgs = installedPkgs.filter { isPackageAnExtension(it) }
 
         if (extPkgs.isEmpty()) return emptyList()
@@ -31,22 +46,22 @@ internal object ExtensionLoader {
             val deferred = extPkgs.map {
                 async { loadExtension(context, it.packageName, it) }
             }
-            deferred.mapNotNull { it.await() }
+            deferred.map { it.await() }
         }
     }
 
-    fun loadExtensionFromPkgName(context: Context, pkgName: String): Extension.Installed? {
-        val pkgInfo = context.packageManager.getPackageInfo(pkgName, PackageManager.GET_CONFIGURATIONS)
+    fun loadExtensionFromPkgName(context: Context, pkgName: String): LoadResult {
+        val pkgInfo = context.packageManager.getPackageInfo(pkgName, PACKAGE_FLAGS)
         if (!isPackageAnExtension(pkgInfo)) {
-            return null
+            return LoadResult.Error("Tried to load a package that wasn't a extension")
         }
         return loadExtension(context, pkgName, pkgInfo)
     }
 
-    private fun loadExtension(context: Context, pkgName: String, optPkgInfo: PackageInfo? = null): Extension.Installed? {
+    private fun loadExtension(context: Context, pkgName: String, optPkgInfo: PackageInfo? = null): LoadResult {
         val pkgManager = context.packageManager
 
-        val pkgInfo = optPkgInfo ?: pkgManager.getPackageInfo(pkgName, PackageManager.GET_CONFIGURATIONS)
+        val pkgInfo = optPkgInfo ?: pkgManager.getPackageInfo(pkgName, PACKAGE_FLAGS)
         val appInfo = pkgManager.getApplicationInfo(pkgName, PackageManager.GET_META_DATA)
 
         val extName = pkgManager.getApplicationLabel(appInfo).toString().substringAfter("Tachiyomi: ")
@@ -56,9 +71,25 @@ internal object ExtensionLoader {
         // Validate lib version
         val majorLibVersion = versionName.substringBefore('.').toInt()
         if (majorLibVersion < LIB_VERSION_MIN || majorLibVersion > LIB_VERSION_MAX) {
-            Timber.w("Lib version is %d, while only versions %d to %d are allowed",
-                    majorLibVersion, LIB_VERSION_MIN, LIB_VERSION_MAX)
-            return null
+            val exception = Exception("Lib version is $majorLibVersion, while only versions " +
+                    "$LIB_VERSION_MIN to $LIB_VERSION_MAX are allowed")
+            Timber.w(exception)
+            return LoadResult.Error(exception)
+        }
+
+        val signatures = pkgInfo.signatures
+        val signatureHash = if (signatures != null && !signatures.isEmpty()) {
+            Hash.sha256(signatures.first().toByteArray())
+        } else {
+            null
+        }
+
+        if (signatureHash == null) {
+            return LoadResult.Error("Package $pkgName isn't signed")
+        } else if (signatureHash !in trustedSignatures) {
+            val extension = Extension.Untrusted(extName, pkgName, versionName, versionCode, signatureHash)
+            Timber.w("Extension $pkgName isn't trusted")
+            return LoadResult.Untrusted(extension)
         }
 
         val classLoader = PathClassLoader(appInfo.sourceDir, null, context.classLoader)
@@ -82,7 +113,7 @@ internal object ExtensionLoader {
                         }
                     } catch (e: Throwable) {
                         Timber.e(e, "Extension load error: $extName.")
-                        return null
+                        return LoadResult.Error(e)
                     }
                 }
         val langs = sources.filterIsInstance<CatalogueSource>()
@@ -95,7 +126,8 @@ internal object ExtensionLoader {
             else -> "all"
         }
 
-        return Extension.Installed(extName, pkgName, versionName, versionCode, sources, lang)
+        val extension = Extension.Installed(extName, pkgName, versionName, versionCode, sources, lang)
+        return LoadResult.Success(extension)
     }
 
     private fun isPackageAnExtension(pkgInfo: PackageInfo): Boolean {
