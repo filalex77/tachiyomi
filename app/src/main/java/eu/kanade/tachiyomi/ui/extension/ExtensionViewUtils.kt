@@ -1,6 +1,8 @@
 package eu.kanade.tachiyomi.ui.extension
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.extension.model.Extension
 import java.util.*
@@ -14,5 +16,13 @@ fun Extension.getLocalizedLang(context: Context): String {
             val locale = Locale(lang)
             locale.getDisplayName(locale).capitalize()
         }
+    }
+}
+
+fun Extension.getApplicationIcon(context: Context): Drawable? {
+    return try {
+        context.packageManager.getApplicationIcon(pkgName)
+    } catch (e: PackageManager.NameNotFoundException) {
+        null
     }
 }

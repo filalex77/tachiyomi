@@ -2,7 +2,6 @@ package eu.kanade.tachiyomi.ui.extension
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v7.preference.*
 import android.support.v7.preference.internal.AbstractMultiSelectListPreference
@@ -23,11 +22,9 @@ import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.LoginSource
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
-import eu.kanade.tachiyomi.ui.setting.initThenAdd
-import eu.kanade.tachiyomi.ui.setting.onClick
+import eu.kanade.tachiyomi.ui.setting.preferenceCategory
 import eu.kanade.tachiyomi.widget.preference.LoginPreference
 import eu.kanade.tachiyomi.widget.preference.SourceLoginDialog
-import eu.kanade.tachiyomi.widget.preference.SwitchPreferenceCategory
 import kotlinx.android.synthetic.main.extension_detail_controller.*
 
 @SuppressLint("RestrictedApi")
@@ -68,12 +65,7 @@ class ExtensionDetailsController(bundle: Bundle? = null) :
         extension_version.text = "Version: ${extension.versionName}"
         extension_lang.text = "Language: ${extension.getLocalizedLang(view.context)}"
         extension_pkg.text = extension.pkgName
-        try {
-            val icon = view.context.packageManager.getApplicationIcon(extension.pkgName)
-            extension_icon.setImageDrawable(icon)
-        } catch (e: PackageManager.NameNotFoundException) {
-            // If the package was uninstalled, don't show any icon
-        }
+        extension.getApplicationIcon(view.context)?.let { extension_icon.setImageDrawable(it) }
         extension_uninstall_button.clicks().subscribeUntilDestroy {
             presenter.uninstallExtension()
         }
@@ -85,11 +77,11 @@ class ExtensionDetailsController(bundle: Bundle? = null) :
         val screen = manager.createPreferenceScreen(themedContext)
         preferenceScreen = screen
 
-        val hasEnabledOption = extension.sources.size > 1
+        val multiSource = extension.sources.size > 1
 
         for (source in extension.sources) {
-            if (hasEnabledOption || source is ConfigurableSource || source is LoginSource) {
-                addPreferencesForSource(screen, source, hasEnabledOption)
+            if (source is ConfigurableSource) {
+                addPreferencesForSource(screen, source, multiSource)
             }
         }
 
@@ -98,6 +90,11 @@ class ExtensionDetailsController(bundle: Bundle? = null) :
         extension_prefs_recycler.layoutManager = LinearLayoutManager(view.context)
         extension_prefs_recycler.adapter = PreferenceGroupAdapter(screen)
         extension_prefs_recycler.addItemDecoration(DividerItemDecoration(view.context, VERTICAL))
+
+        if (screen.preferenceCount == 0) {
+            extension_prefs_empty_view.show(R.drawable.ic_no_settings,
+                    R.string.ext_empty_preferences)
+        }
     }
 
     override fun onDestroyView(view: View) {
@@ -119,7 +116,7 @@ class ExtensionDetailsController(bundle: Bundle? = null) :
         lastOpenPreferencePosition = savedInstanceState.get(LASTOPENPREFERENCE_KEY) as? Int
     }
 
-    private fun addPreferencesForSource(screen: PreferenceScreen, source: Source, hasEnabledOption: Boolean) {
+    private fun addPreferencesForSource(screen: PreferenceScreen, source: Source, multiSource: Boolean) {
         val context = screen.context
 
         val dataStore = SharedPreferencesDataStore(if (source is HttpSource) {
@@ -128,26 +125,13 @@ class ExtensionDetailsController(bundle: Bundle? = null) :
             context.getSharedPreferences("source_${source.id}", Context.MODE_PRIVATE)
         })
 
-        if (hasEnabledOption) {
-            screen.initThenAdd(SwitchPreferenceCategory(context)) {
-                title = source.toString()
-                key = "enabled"
-                preferenceDataStore = dataStore
-            }
-        }
-        if (source is LoginSource) {
-            screen.initThenAdd(LoginPreference(context)) {
-                title = "Login" // TODO resource
-                key = "user"
-                preferenceDataStore = dataStore
-                onClick {
-                    val dialog = SourceLoginDialog(source)
-                    dialog.targetController = this@ExtensionDetailsController
-                    dialog.showDialog(router)
+        if (source is ConfigurableSource) {
+            if (multiSource) {
+                screen.preferenceCategory {
+                    title = source.toString()
                 }
             }
-        }
-        if (source is ConfigurableSource) {
+
             val newScreen = screen.preferenceManager.createPreferenceScreen(context)
             source.setupPreferenceScreen(newScreen)
 

@@ -31,12 +31,13 @@ class FDroidApi {
             val name = element.select("name").text().substringAfter("Tachiyomi: ")
             val pkgName = element.select("id").text()
             val recentPackage = element.select("package").first()
+            val icon = "$baseUrl/icons-320/" + element.select("icon").text()
             val versionName = recentPackage.select("version").text()
             val versionCode = recentPackage.select("versioncode").text().toInt()
             val apkName = recentPackage.select("apkname").text()
             val lang = pkgName.substringAfter(".extension.").substringBefore(".")
 
-            Extension.Available(name, pkgName, versionName, versionCode, lang, apkName)
+            Extension.Available(name, pkgName, versionName, versionCode, lang, apkName, icon)
         }
     }
 

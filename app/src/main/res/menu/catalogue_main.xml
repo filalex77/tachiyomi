@@ -10,12 +10,6 @@
         app:actionViewClass="android.support.v7.widget.SearchView"
         app:showAsAction="collapseActionView|ifRoom"/>
 
-    <item
-        android:id="@+id/action_extensions"
-        android:icon="@drawable/ic_book_white_24dp"
-        android:title="@string/pref_category_extensions"
-        app:showAsAction="ifRoom"/>
-
     <item android:id="@+id/action_settings"
           android:title="@string/pref_category_sources"
           android:icon="@drawable/ic_settings_white_24dp"

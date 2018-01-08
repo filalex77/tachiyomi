@@ -20,6 +20,7 @@
     <string name="label_categories">Categories</string>
     <string name="label_selected">Selected: %1$d</string>
     <string name="label_backup">Backup</string>
+    <string name="label_extensions">Extensions</string>
 
 
     <!-- Actions -->
@@ -105,7 +106,6 @@
     <string name="pref_category_reader">Reader</string>
     <string name="pref_category_downloads">Downloads</string>
     <string name="pref_category_sources">Sources</string>
-    <string name="pref_category_extensions">Extensions</string>
     <string name="pref_category_tracking">Tracking</string>
     <string name="pref_category_advanced">Advanced</string>
     <string name="pref_category_about">About</string>
@@ -146,7 +146,6 @@
     <string name="default_category_summary">Always ask</string>
 
     <!-- Extension section -->
-    <string name="error_with_repository">Error connecting to repository</string>
     <string name="all_lang">All</string>
     <string name="ext_details">Details</string>
     <string name="ext_update">Update</string>
@@ -162,6 +161,7 @@
     <string name="ext_available">Available</string>
     <string name="untrusted_extension">Untrusted extension</string>
     <string name="untrusted_extension_message">This extension was signed with an untrusted certificate and it wasn\'t activated.\n\nA malicious extension could read any login credentials stored in Tachiyomi or execute arbitrary code.\n\nBy trusting this certificate you accept these risks.</string>
+    <string name="ext_empty_preferences">There are no preferences to edit for this extension</string>
 
       <!-- Reader section -->
     <string name="pref_fullscreen">Fullscreen</string>

@@ -17,7 +17,6 @@ import eu.kanade.tachiyomi.source.online.LoginSource
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
 import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
 import eu.kanade.tachiyomi.ui.catalogue.browse.BrowseCatalogueController
-import eu.kanade.tachiyomi.ui.extension.ExtensionController
 import eu.kanade.tachiyomi.ui.catalogue.global_search.CatalogueSearchController
 import eu.kanade.tachiyomi.ui.catalogue.latest.LatestUpdatesController
 import eu.kanade.tachiyomi.ui.setting.SettingsSourcesController
@@ -200,17 +199,12 @@ class CatalogueController : NucleusController<CataloguePresenter>(),
      */
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-        // Initialize option to open catalogue settings.
+            // Initialize option to open catalogue settings.
             R.id.action_settings -> {
                 router.pushController((RouterTransaction.with(SettingsSourcesController()))
                         .popChangeHandler(SettingsSourcesFadeChangeHandler())
                         .pushChangeHandler(FadeChangeHandler()))
 
-            }
-            R.id.action_extensions -> {
-                router.pushController((RouterTransaction.with(ExtensionController()))
-                        .popChangeHandler(SettingsSourcesFadeChangeHandler())
-                        .pushChangeHandler(FadeChangeHandler()))
             }
             else -> return super.onOptionsItemSelected(item)
         }

@@ -19,6 +19,9 @@ import timber.log.Timber
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
+/**
+ * Class that handles the loading of the extensions installed in the system.
+ */
 @SuppressLint("PackageManagerGetSignatures")
 internal object ExtensionLoader {
 
@@ -29,11 +32,19 @@ internal object ExtensionLoader {
 
     private const val PACKAGE_FLAGS = PackageManager.GET_CONFIGURATIONS or PackageManager.GET_SIGNATURES
 
+    /**
+     * List of the trusted signatures.
+     */
     var trustedSignatures = mutableSetOf<String>() +
             Injekt.get<PreferencesHelper>().trustedSignatures().getOrDefault() +
             // inorichi's key
             "7ce04da7773d41b489f4693a366c36bcd0a11fc39b547168553c285bd7348e23"
 
+    /**
+     * Return a list of all the installed extensions initialized concurrently.
+     *
+     * @param context The application context.
+     */
     fun loadExtensions(context: Context): List<LoadResult> {
         val pkgManager = context.packageManager
         val installedPkgs = pkgManager.getInstalledPackages(PACKAGE_FLAGS)
@@ -50,6 +61,10 @@ internal object ExtensionLoader {
         }
     }
 
+    /**
+     * Attempts to load an extension from the given package name. It checks if the extension
+     * contains the required feature flag before trying to load it.
+     */
     fun loadExtensionFromPkgName(context: Context, pkgName: String): LoadResult {
         val pkgInfo = context.packageManager.getPackageInfo(pkgName, PACKAGE_FLAGS)
         if (!isPackageAnExtension(pkgInfo)) {
@@ -58,10 +73,16 @@ internal object ExtensionLoader {
         return loadExtension(context, pkgName, pkgInfo)
     }
 
-    private fun loadExtension(context: Context, pkgName: String, optPkgInfo: PackageInfo? = null): LoadResult {
+    /**
+     * Loads an extension given its package name.
+     *
+     * @param context The application context.
+     * @param pkgName The package name of the extension to load.
+     * @param pkgInfo The package info of the extension.
+     */
+    private fun loadExtension(context: Context, pkgName: String, pkgInfo: PackageInfo): LoadResult {
         val pkgManager = context.packageManager
 
-        val pkgInfo = optPkgInfo ?: pkgManager.getPackageInfo(pkgName, PACKAGE_FLAGS)
         val appInfo = pkgManager.getApplicationInfo(pkgName, PackageManager.GET_META_DATA)
 
         val extName = pkgManager.getApplicationLabel(appInfo).toString().substringAfter("Tachiyomi: ")
@@ -77,12 +98,7 @@ internal object ExtensionLoader {
             return LoadResult.Error(exception)
         }
 
-        val signatures = pkgInfo.signatures
-        val signatureHash = if (signatures != null && !signatures.isEmpty()) {
-            Hash.sha256(signatures.first().toByteArray())
-        } else {
-            null
-        }
+        val signatureHash = getSignatureHash(pkgInfo)
 
         if (signatureHash == null) {
             return LoadResult.Error("Package $pkgName isn't signed")
@@ -130,8 +146,27 @@ internal object ExtensionLoader {
         return LoadResult.Success(extension)
     }
 
+    /**
+     * Returns true if the given package is an extension.
+     *
+     * @param pkgInfo The package info of the application.
+     */
     private fun isPackageAnExtension(pkgInfo: PackageInfo): Boolean {
         return pkgInfo.reqFeatures.orEmpty().any { it.name == EXTENSION_FEATURE }
+    }
+
+    /**
+     * Returns the signature hash of the package or null if it's not signed.
+     *
+     * @param pkgInfo The package info of the application.
+     */
+    private fun getSignatureHash(pkgInfo: PackageInfo): String? {
+        val signatures = pkgInfo.signatures
+        return if (signatures != null && !signatures.isEmpty()) {
+            Hash.sha256(signatures.first().toByteArray())
+        } else {
+            null
+        }
     }
 
 }

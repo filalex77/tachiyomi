@@ -33,7 +33,7 @@ open class ExtensionController : NucleusController<ExtensionPresenter>(),
     }
 
     override fun getTitle(): String? {
-        return applicationContext?.getString(R.string.pref_category_extensions)
+        return applicationContext?.getString(R.string.label_extensions)
     }
 
     override fun createPresenter(): ExtensionPresenter {

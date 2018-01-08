@@ -4,11 +4,11 @@ import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.glide.GlideApp
 import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.extension.model.InstallStep
 import eu.kanade.tachiyomi.ui.base.holder.BaseFlexibleViewHolder
 import eu.kanade.tachiyomi.util.dpToPx
-import eu.kanade.tachiyomi.util.getRound
 import io.github.mthli.slice.Slice
 import kotlinx.android.synthetic.main.extension_card_item.*
 
@@ -37,8 +37,14 @@ class ExtensionHolder(view: View, private val adapter: ExtensionAdapter) :
         } else {
             itemView.context.getString(R.string.ext_untrusted).toUpperCase()
         }
-        itemView.post {
-            image.setImageDrawable(image.getRound(extension.name.take(1).toUpperCase(), false))
+
+        GlideApp.with(itemView.context).clear(image)
+        if (extension is Extension.Available) {
+            GlideApp.with(itemView.context)
+                    .load(extension.iconUrl)
+                    .into(image)
+        } else {
+            extension.getApplicationIcon(itemView.context)?.let { image.setImageDrawable(it) }
         }
         bindButton(item)
     }

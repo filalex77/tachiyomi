@@ -23,7 +23,8 @@ sealed class Extension {
                          override val versionName: String,
                          override val versionCode: Int,
                          override val lang: String,
-                         val apkName: String) : Extension()
+                         val apkName: String,
+                         val iconUrl: String) : Extension()
 
     data class Untrusted(override val name: String,
                          override val pkgName: String,
