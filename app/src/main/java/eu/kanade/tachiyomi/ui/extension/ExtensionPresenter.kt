@@ -6,11 +6,14 @@ import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.extension.model.InstallStep
 import eu.kanade.tachiyomi.ui.base.presenter.BasePresenter
 import rx.Observable
+import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
-import rx.schedulers.Schedulers
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.concurrent.TimeUnit
+
+private typealias ExtensionTuple
+        = Triple<List<Extension.Installed>, List<Extension.Untrusted>, List<Extension.Available>>
 
 /**
  * Presenter of [ExtensionController].
@@ -26,82 +29,90 @@ open class ExtensionPresenter(
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        getExtensionsObservable()
-                .subscribeOn(Schedulers.io())
+        bindToExtensionsObservable()
+    }
+
+    private fun bindToExtensionsObservable(): Subscription {
+        val installedObservable = extensionManager.getInstalledExtensionsObservable()
+        val untrustedObservable = extensionManager.getUntrustedExtensionsObservable()
+        val availableObservable = extensionManager.getAvailableExtensionsObservable()
+                .startWith(emptyList<Extension.Available>())
+
+        return Observable.combineLatest(installedObservable, untrustedObservable, availableObservable)
+                { installed, untrusted, available -> Triple(installed, untrusted, available) }
+                .debounce(100, TimeUnit.MILLISECONDS)
+                .map(::toItems)
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext { extensions = it }
                 .subscribeLatestCache({ view, _ -> view.setExtensions(extensions) })
     }
 
+    @Synchronized
+    private fun toItems(tuple: ExtensionTuple): List<ExtensionItem> {
+        val (installed, untrusted, available) = tuple
 
-    private fun getExtensionsObservable(): Observable<List<ExtensionItem>> {
-        val inst = extensionManager.getInstalledExtensionsObservable()
+        val items = mutableListOf<ExtensionItem>()
 
-        val avail = extensionManager.getAvailableExtensionsObservable()
-                .startWith(emptyList<Extension.Available>())
+        val installedSorted = installed.sortedWith(compareBy({ !it.hasUpdate }, { it.name }))
+        val untrustedSorted = untrusted.sortedBy { it.name }
+        val availableSorted = available
+                // Filter out already installed extensions
+                .filter { avail -> installed.none { it.pkgName == avail.pkgName }
+                        && untrusted.none { it.pkgName == avail.pkgName } }
+                .sortedBy { it.name }
 
-        val untru = extensionManager.getUntrustedExtensionsObservable()
-
-        return Observable.combineLatest(inst, avail, untru, { installed, available, untrusted ->
-            Triple(installed, available, untrusted)
-        }).debounce(100, TimeUnit.MILLISECONDS).map { (installed, available, untrusted) ->
-            val items = mutableListOf<ExtensionItem>()
-
-            val installedSorted = installed.sortedWith(compareBy({ !it.hasUpdate }, { it.name }))
-            val untrustedSorted = untrusted.sortedBy { it.name }
-            val availableSorted = available
-                    // Filter out already installed extensions
-                    .filter { avail -> installed.none { it.pkgName == avail.pkgName }
-                            && untrusted.none { it.pkgName == avail.pkgName } }
-                    .sortedBy { it.name }
-
-            if (installedSorted.isNotEmpty() || untrustedSorted.isNotEmpty()) {
-                val header = ExtensionGroupItem(true, installedSorted.size + untrustedSorted.size)
-                items += installedSorted.map { extension ->
-                    ExtensionItem(extension, header, currentDownloads[extension.pkgName])
-                }
-                items += untrustedSorted.map { extension ->
-                    ExtensionItem(extension, header)
-                }
+        if (installedSorted.isNotEmpty() || untrustedSorted.isNotEmpty()) {
+            val header = ExtensionGroupItem(true, installedSorted.size + untrustedSorted.size)
+            items += installedSorted.map { extension ->
+                ExtensionItem(extension, header, currentDownloads[extension.pkgName])
             }
-            if (availableSorted.isNotEmpty()) {
-                val header = ExtensionGroupItem(false, availableSorted.size)
-                items += availableSorted.map { extension ->
-                    ExtensionItem(extension, header, currentDownloads[extension.pkgName])
-                }
+            items += untrustedSorted.map { extension ->
+                ExtensionItem(extension, header)
             }
+        }
+        if (availableSorted.isNotEmpty()) {
+            val header = ExtensionGroupItem(false, availableSorted.size)
+            items += availableSorted.map { extension ->
+                ExtensionItem(extension, header, currentDownloads[extension.pkgName])
+            }
+        }
 
-            items
+        this.extensions = items
+        return items
+    }
+
+    @Synchronized
+    private fun updateInstallStep(extension: Extension, state: InstallStep): ExtensionItem? {
+        val extensions = extensions.toMutableList()
+        val position = extensions.indexOfFirst { it.extension.pkgName == extension.pkgName }
+
+        return if (position != -1) {
+            val item = extensions[position].copy(installStep = state)
+            extensions[position] = item
+
+            this.extensions = extensions
+            item
+        } else {
+            null
         }
     }
 
     fun installExtension(extension: Extension.Available) {
-        extensionManager.installExtension(extension)
-                .doOnNext { currentDownloads.put(extension.pkgName, it) }
+        extensionManager.installExtension(extension).subscribeToInstallUpdate(extension)
+    }
+
+    fun updateExtension(extension: Extension.Installed) {
+        extensionManager.updateExtension(extension).subscribeToInstallUpdate(extension)
+    }
+
+    private fun Observable<InstallStep>.subscribeToInstallUpdate(extension: Extension) {
+        this.doOnNext { currentDownloads.put(extension.pkgName, it) }
                 .doOnUnsubscribe { currentDownloads.remove(extension.pkgName) }
-                .map { state ->
-                    val extensions = extensions.toMutableList()
-                    val position = extensions.indexOfFirst { it.extension.pkgName == extension.pkgName }
-
-                    if (position != -1) {
-                        val item = extensions[position].copy(installStep = state)
-                        extensions[position] = item
-
-                        this.extensions = extensions
-                        item
-                    } else {
-                        null
-                    }
-                }
+                .map { state -> updateInstallStep(extension, state) }
                 .subscribeWithView({ view, item ->
                     if (item != null) {
                         view.downloadUpdate(item)
                     }
                 })
-    }
-
-    fun updateExtension(extension: Extension.Installed) {
-        extensionManager.updateExtension(extension)
     }
 
     fun uninstallExtension(pkgName: String) {

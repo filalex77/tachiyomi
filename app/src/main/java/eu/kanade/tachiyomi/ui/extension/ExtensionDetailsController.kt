@@ -51,7 +51,7 @@ class ExtensionDetailsController(bundle: Bundle? = null) :
     }
 
     override fun getTitle(): String? {
-        return "Extension info" // TODO resource
+        return resources?.getString(R.string.label_extension_info)
     }
 
     @SuppressLint("PrivateResource")
@@ -59,13 +59,13 @@ class ExtensionDetailsController(bundle: Bundle? = null) :
         super.onViewCreated(view)
 
         val extension = presenter.extension
+        val context = view.context
 
-        // TODO resource
         extension_title.text = extension.name
-        extension_version.text = "Version: ${extension.versionName}"
-        extension_lang.text = "Language: ${extension.getLocalizedLang(view.context)}"
+        extension_version.text = context.getString(R.string.ext_version_info, extension.versionName)
+        extension_lang.text = context.getString(R.string.ext_language_info, extension.getLocalizedLang(context))
         extension_pkg.text = extension.pkgName
-        extension.getApplicationIcon(view.context)?.let { extension_icon.setImageDrawable(it) }
+        extension.getApplicationIcon(context)?.let { extension_icon.setImageDrawable(it) }
         extension_uninstall_button.clicks().subscribeUntilDestroy {
             presenter.uninstallExtension()
         }
@@ -87,9 +87,9 @@ class ExtensionDetailsController(bundle: Bundle? = null) :
 
         manager.setPreferences(screen)
 
-        extension_prefs_recycler.layoutManager = LinearLayoutManager(view.context)
+        extension_prefs_recycler.layoutManager = LinearLayoutManager(context)
         extension_prefs_recycler.adapter = PreferenceGroupAdapter(screen)
-        extension_prefs_recycler.addItemDecoration(DividerItemDecoration(view.context, VERTICAL))
+        extension_prefs_recycler.addItemDecoration(DividerItemDecoration(context, VERTICAL))
 
         if (screen.preferenceCount == 0) {
             extension_prefs_empty_view.show(R.drawable.ic_no_settings,
