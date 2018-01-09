@@ -19,7 +19,6 @@ import eu.kanade.tachiyomi.data.preference.EmptyPreferenceDataStore
 import eu.kanade.tachiyomi.data.preference.SharedPreferencesDataStore
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.LoginSource
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
 import eu.kanade.tachiyomi.ui.setting.preferenceCategory
@@ -119,11 +118,12 @@ class ExtensionDetailsController(bundle: Bundle? = null) :
     private fun addPreferencesForSource(screen: PreferenceScreen, source: Source, multiSource: Boolean) {
         val context = screen.context
 
-        val dataStore = SharedPreferencesDataStore(if (source is HttpSource) {
+        // TODO 
+        val dataStore = SharedPreferencesDataStore(/*if (source is HttpSource) {
             source.preferences
-        } else {
+        } else {*/
             context.getSharedPreferences("source_${source.id}", Context.MODE_PRIVATE)
-        })
+        /*}*/)
 
         if (source is ConfigurableSource) {
             if (multiSource) {
