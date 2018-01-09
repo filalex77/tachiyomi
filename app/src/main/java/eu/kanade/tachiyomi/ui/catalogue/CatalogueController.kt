@@ -175,7 +175,7 @@ class CatalogueController : NucleusController<CataloguePresenter>(),
         // Inflate menu
         inflater.inflate(R.menu.catalogue_main, menu)
 
-
+        // Initialize search option.
         val searchItem = menu.findItem(R.id.action_search)
         val searchView = searchItem.actionView as SearchView
 
@@ -204,7 +204,6 @@ class CatalogueController : NucleusController<CataloguePresenter>(),
                 router.pushController((RouterTransaction.with(SettingsSourcesController()))
                         .popChangeHandler(SettingsSourcesFadeChangeHandler())
                         .pushChangeHandler(FadeChangeHandler()))
-
             }
             else -> return super.onOptionsItemSelected(item)
         }

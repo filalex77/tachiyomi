@@ -37,12 +37,12 @@ internal class UpdaterNotifier(private val context: Context) {
      *
      * @param title tile of notification.
      */
-    fun onDownloadStarted(title: String, onGoing : Boolean = true) {
+    fun onDownloadStarted(title: String) {
         with(notification) {
             setContentTitle(title)
             setContentText(context.getString(R.string.update_check_notification_download_in_progress))
             setSmallIcon(android.R.drawable.stat_sys_download)
-            setOngoing(onGoing)
+            setOngoing(true)
         }
         notification.show()
     }
@@ -83,17 +83,6 @@ internal class UpdaterNotifier(private val context: Context) {
         }
         notification.show()
     }
-
-    fun onDownloadFinished(title: String) {
-        with(notification) {
-            setContentText(context.getString(R.string.update_check_notification_download_complete))
-            setSmallIcon(android.R.drawable.stat_sys_download_done)
-            setOnlyAlertOnce(false)
-            setProgress(0, 0, false)
-        }
-        notification.show()
-    }
-
 
     /**
      * Call when apk download throws a error
