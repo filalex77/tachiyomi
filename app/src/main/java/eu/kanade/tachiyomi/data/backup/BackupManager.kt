@@ -21,13 +21,11 @@ import eu.kanade.tachiyomi.data.backup.models.DHistory
 import eu.kanade.tachiyomi.data.backup.serializer.*
 import eu.kanade.tachiyomi.data.database.DatabaseHelper
 import eu.kanade.tachiyomi.data.database.models.*
-import eu.kanade.tachiyomi.data.preference.PreferenceKeys
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.data.preference.getOrDefault
 import eu.kanade.tachiyomi.data.track.TrackManager
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceManager
-import eu.kanade.tachiyomi.source.SourceWithPreferences
 import eu.kanade.tachiyomi.util.syncChaptersWithSource
 import rx.Observable
 import uy.kohesive.injekt.injectLazy
@@ -191,9 +189,6 @@ class BackupManager(val context: Context, version: Int = CURRENT_VERSION) {
      * @return [Observable] that contains manga
      */
     fun restoreChapterFetchObservable(source: Source, manga: Manga, chapters: List<Chapter>): Observable<Pair<List<Chapter>, List<Chapter>>> {
-        if (source is SourceWithPreferences){
-            source.sharedPreference = preferences.context.getSharedPreferences(PreferenceKeys.sourceSharedPref(source.id), Context.MODE_PRIVATE)
-        }
         return source.fetchChapterList(manga)
                 .map { syncChaptersWithSource(databaseHelper, it, manga, source) }
                 .doOnNext {
